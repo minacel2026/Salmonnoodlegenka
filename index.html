@@ -174,8 +174,18 @@ function jsonp(params){
   });
 }
 function apiGet(){
-  if(HAS_API) return jsonp({ action:"get", code:(__PASS||"") });
-  try{ var r=localStorage.getItem("salmon-web-v1"); return Promise.resolve(r?JSON.parse(r):null); }catch(e){ return Promise.resolve(null); }
+  if(!HAS_API){ try{ var r=localStorage.getItem("salmon-web-v1"); return Promise.resolve(r?JSON.parse(r):null); }catch(e){ return Promise.resolve(null); } }
+  var p={ action:"get", code:(__PASS||"") };
+  // ① まず fetch で取得（リダイレクトも自動追従）。ダメなら ② JSONP を試す。
+  var qs = Object.keys(p).map(function(k){ return encodeURIComponent(k)+"="+encodeURIComponent(p[k]); }).join("&");
+  return fetch(API_URL+"?"+qs+"&callback=cb", { method:"GET", redirect:"follow" })
+    .then(function(r){ if(!r.ok) throw new Error("http "+r.status); return r.text(); })
+    .then(function(t){
+      var i=t.indexOf("("), j=t.lastIndexOf(")");
+      if(i<0||j<0) throw new Error("format");
+      return JSON.parse(t.slice(i+1,j));
+    })
+    .catch(function(){ return jsonp(p); });
 }
 function apiSave(state){
   if(HAS_API){
@@ -343,7 +353,7 @@ function tryPass(){
     if(d && d.error){ err.textContent='合言葉が違います'; document.getElementById('gateIn').value=''; __PASS=null; return; }
     try{ localStorage.setItem('salmon-gate', code); }catch(e){}
     hideGate(); applyData(d);
-  }).catch(function(){ err.textContent='確認できませんでした'; __PASS=null; });
+  }).catch(function(e){ err.textContent='接続できませんでした（'+((e&&e.message)||'通信')+'）'; __PASS=null; });
 }
 document.getElementById('gateBtn').addEventListener('click', tryPass);
 document.getElementById('gateIn').addEventListener('keydown', function(e){ if(e.key==='Enter') tryPass(); });
