@@ -71,7 +71,11 @@
   .metric .v small{font-size:11px;font-weight:500;color:var(--muted)}
   .rate-good{color:var(--good)}.rate-over{color:var(--over)}
   .comp{display:grid;grid-template-columns:1fr 70px 42px 80px 30px;gap:8px;align-items:center;padding:9px 14px;border-bottom:1px solid var(--line);font-size:13px}
-  .comp .cunit{color:var(--muted);font-size:12px;text-align:center}.comp .ccost{text-align:right;font-weight:700}
+  .comp .cunit{color:var(--muted);font-size:12px;text-align:center}
+  .comp .csel{width:100%;border:1px solid transparent;border-radius:7px;padding:5px 4px;font-family:inherit;font-size:13px;background:#fff;color:var(--ink);appearance:auto}
+  .comp .csel:hover{border-color:var(--line)}
+  .comp .csel:focus{outline:none;border-color:var(--salmon);box-shadow:0 0 0 3px var(--salmon-soft)}
+  .comp .csel.isprep{color:var(--salmon-deep);font-weight:700}.comp .ccost{text-align:right;font-weight:700}
   .comp.missing .cname{color:var(--over)}
   .comp-add{display:flex;gap:8px;padding:11px 14px}.comp-add select{flex:1}
   .empty{text-align:center;padding:38px 20px;color:var(--muted)}
@@ -115,6 +119,10 @@
   .hist .k{flex:0 0 auto;font-size:10.5px;font-weight:700;border-radius:20px;padding:2px 9px;background:var(--salmon-soft);color:var(--salmon-deep);white-space:nowrap}
   .hist .x{flex:1}
   .toolbar{display:flex;gap:8px;flex-wrap:wrap;margin-bottom:14px}
+  .subtabs{display:flex;gap:6px;flex-wrap:wrap;margin-bottom:12px}
+  .subtabs button{background:#fff;border:1px solid var(--line);border-radius:20px;padding:6px 14px;font-family:inherit;font-size:12.5px;font-weight:700;color:var(--muted);cursor:pointer}
+  .subtabs button .n{font-weight:500;font-size:10.5px;opacity:.8;margin-left:3px}
+  .subtabs button.on{background:var(--salmon);border-color:var(--salmon);color:#fff}
   #printArea{display:none}
   @media print{
     body{background:#fff}
@@ -164,6 +172,7 @@
   <section class="panel active" id="panel-ing">
     <div class="panel-head"><h2 class="mincho">材料の仕入れ</h2><span class="hint">仕入価格と量から単価を自動計算</span></div>
     <div id="ingBanner"></div>
+    <div class="subtabs" id="ingSub"></div>
     <div class="card">
       <div class="lbl-row"><span>材料名</span><span>数量</span><span>単位</span><span>単価(¥)</span><span></span></div>
       <div id="ingList"></div>
@@ -172,11 +181,13 @@
   </section>
   <section class="panel" id="panel-prep">
     <div class="panel-head"><h2 class="mincho">仕込み</h2><span class="hint">材料と完成量から1単位あたりの単価を自動計算</span></div>
+    <div class="toolbar"><button class="btn btn-ghost btn-sm" onclick="doPrint()">🖨 一覧を印刷 / PDF</button></div>
     <div id="prepList"></div>
     <button class="btn btn-primary" style="width:100%" onclick="addPrep()">＋ 仕込みを追加</button>
   </section>
   <section class="panel" id="panel-menu">
     <div class="panel-head"><h2 class="mincho">メニューと原価</h2><span class="hint">材料を選んで一杯の原価を計算</span></div>
+    <div class="toolbar"><button class="btn btn-ghost btn-sm" onclick="doPrint()">🖨 一覧を印刷 / PDF</button></div>
     <div id="menuList"></div>
     <button class="btn btn-primary" style="width:100%" onclick="addMenu()">＋ メニューを追加</button>
   </section>
@@ -366,7 +377,7 @@ function renderHist(){
 }
 
 /* ---------- 材料 ---------- */
-function catOptions(sel){return CATS.map(c=>`<option ${c===sel?'selected':''}>${c}</option>`).join('');}
+function catOptions(sel){return CATS.filter(c=>c!=='調理済み'||c===sel).map(c=>`<option ${c===sel?'selected':''}>${c}</option>`).join('');}
 function ingRow(ing){
   const uc=unitCost(ing);const uOpts=UNITS.map(u=>`<option ${u===ing.unit?'selected':''}>${u}</option>`).join('');
   const i=state.ingredients.indexOf(ing);
@@ -380,20 +391,57 @@ function ingRow(ing){
       <select class="catsel" onchange="upIng(${i},'cat',this.value)">${catOptions(ing.cat||'その他')}</select></div>
   </div>`;
 }
+let ingFilter='ALL';
+function setIngFilter(c){ ingFilter=c; renderIng(); }
+/* 「調理済み」は仕込みタブで自動計算するため、材料タブには表示しません */
+const PREP_CAT='調理済み';
+function isPrepCat(i){ return (i.cat||'その他')===PREP_CAT; }
 function renderIng(){
   const el=document.getElementById('ingList');
   const bn=document.getElementById('ingBanner');
-  bn.innerHTML = HAS_API ? '' : '<div class="banner">接続先URLが未設定のプレビュー表示です（この端末に一時保存）。導入ガイドの通りURLを設定するとスプレッドシートと同期します。</div>';
+  bn.innerHTML = HAS_API ? '' : '<div class="banner">接続先URLが未設定のプレビュー表示です（この端末に一時保存）。</div>';
+
+  const buyable=state.ingredients.filter(i=>!isPrepCat(i));   // 仕入れるもの
+  const hidden =state.ingredients.filter(isPrepCat);          // 仕込み品（材料タブでは非表示）
+
+  // サブタブ
+  const sub=document.getElementById('ingSub');
+  if(sub){
+    const cats=CATS.filter(c=>c!==PREP_CAT&&buyable.some(i=>(i.cat||'その他')===c));
+    let h=`<button class="${ingFilter==='ALL'?'on':''}" onclick="setIngFilter('ALL')">すべて<span class="n">${buyable.length}</span></button>`;
+    cats.forEach(function(c){
+      const n=buyable.filter(i=>(i.cat||'その他')===c).length;
+      h+=`<button class="${ingFilter===c?'on':''}" onclick="setIngFilter('${esc(c)}')">${esc(c)}<span class="n">${n}</span></button>`;
+    });
+    sub.innerHTML=h;
+  }
+
+  const show=(ingFilter==='ALL')?buyable:buyable.filter(i=>(i.cat||'その他')===ingFilter);
   if(!state.ingredients.length){
     el.innerHTML=`<div class="empty"><div class="big">まだ材料がありません</div><button class="btn btn-ghost btn-sm" onclick="seed()">原価表を読み込む</button></div>`;
+  }else if(!show.length){
+    el.innerHTML='<div class="empty">この区分の材料はありません。</div>';
   }else{
-    let h='';CATS.forEach(cat=>{const items=state.ingredients.filter(i=>(i.cat||'その他')===cat);if(!items.length)return;h+=`<div class="cat-head">${cat}<span>${items.length}</span></div>`+items.map(ingRow).join('');});el.innerHTML=h;
+    let h='';
+    const cats=(ingFilter==='ALL')?CATS.filter(c=>c!==PREP_CAT):[ingFilter];
+    cats.forEach(function(cat){
+      const items=show.filter(i=>(i.cat||'その他')===cat);
+      if(!items.length)return;
+      h+=`<div class="cat-head">${esc(cat)}<span>${items.length}</span></div>`+items.map(ingRow).join('');
+    });
+    el.innerHTML=h;
   }
-  document.getElementById('cntIng').textContent=state.ingredients.length?`(${state.ingredients.length})`:'';
+  if(hidden.length){
+    el.innerHTML += `<div class="cat-head" style="background:#eef6f1;color:#2c6a4d">仕込み品（このタブでは編集しません）<span>${hidden.length}</span></div>`
+      + `<div style="padding:12px 14px;font-size:12.5px;color:var(--muted);line-height:1.7">`
+      + hidden.map(i=>esc(i.name)).join('、')
+      + `<br><b style="color:var(--good)">これらは「仕込み」タブで材料から自動計算されます。</b>単価を直したいときは仕込みタブで編集してください。</div>`;
+  }
+  document.getElementById('cntIng').textContent=buyable.length?`(${buyable.length})`:'';
 }
-function addIng(){state.ingredients.push({name:"",cat:"その他",amount:"",unit:"g",price:""});renderIng();scheduleSave();}
+function addIng(){const c=(ingFilter!=='ALL'&&ingFilter!==PREP_CAT)?ingFilter:'一般食材';state.ingredients.push({name:"",cat:c,amount:1,unit:"g",price:""});renderIng();scheduleSave();}
 function upIng(i,f,v){const ing=state.ingredients[i];if(!ing)return;ing[f]=v;
-  if(f==='cat'){renderIng();scheduleSave();return;}
+  if(f==='cat'){const y=window.scrollY;renderIng();window.scrollTo(0,y);scheduleSave();return;}
   const uc=unitCost(ing),el=document.getElementById('uc-'+i);if(el)el.textContent=uc?`単価 ${yen2(uc)} / ${ing.unit}`:'量と価格で単価が出ます';
   renderMenusLive();scheduleSave();}
 function renameIng(i,v){const ing=state.ingredients[i];if(!ing)return;const old=ing.name;ing.name=v;
@@ -402,6 +450,34 @@ function delIng(i){const ing=state.ingredients[i];const used=state.menus.some(m=
   if(used&&!confirm(`「${ing.name||'この材料'}」はメニューで使われています。削除しますか？`))return;
   state.ingredients.splice(i,1);renderIng();renderMenus();scheduleSave();}
 
+
+
+/* 行ごとのプルダウン（今の選択を保持。仕込みを上に、次に材料をカテゴリ別） */
+function pickerOptions(current, excludeName){
+  const sel=v=>(v===current?' selected':'');
+  let h='';
+  let found=false;
+  const preps=(state.preps||[]).filter(p=>p.name && p.name!==excludeName);
+  if(preps.length){
+    h+='<optgroup label="■ 仕込み">'+preps.map(function(p){
+      if(p.name===current)found=true;
+      return `<option value="${esc(p.name)}"${sel(p.name)}>${esc(p.name)}</option>`;}).join('')+'</optgroup>';
+  }
+  CATS.forEach(function(cat){
+    if(cat==='調理済み')return;   // 仕込みグループに出るので重複させない
+    const items=state.ingredients.filter(i=>i.name&&i.name!==excludeName&&(i.cat||'その他')===cat);
+    if(!items.length)return;
+    h+=`<optgroup label="${cat}">`+items.map(function(i){
+      if(i.name===current)found=true;
+      return `<option value="${esc(i.name)}"${sel(i.name)}>${esc(i.name)}</option>`;}).join('')+`</optgroup>`;
+  });
+  if(!found && current) h='<option value="'+esc(current)+'" selected>'+esc(current)+'（見つかりません）</option>'+h;
+  return h;
+}
+function changeComp(j,k,name){ const c=state.menus[j].components[k]; if(!c||!name)return; c.ingName=name; renderMenus(); scheduleSave(); }
+function changePComp(j,k,name){ const c=state.preps[j].components[k]; if(!c||!name)return;
+  if(state.preps[j].name===name){ toast('自分自身は選べません'); renderPreps(); return; }
+  c.ingName=name; renderPreps(); renderMenusLive(); scheduleSave(); }
 
 /* ---------- 仕込み ---------- */
 function prepOptsHTML(){
@@ -421,7 +497,7 @@ function prepCardHTML(p,j){
   const comps=p.components.length?p.components.map(function(c,k){
     const nm=c.ingName, ok=anyExists(nm), uc=ok?anyUnitCost(nm):0, q=parseFloat(c.qty)||0;
     if(!ok)return `<div class="comp missing"><span class="cname">(見つからない材料) ${esc(nm)}</span><span></span><span></span><span class="ccost">—</span><button class="del" onclick="delPComp(${j},${k})">×</button></div>`;
-    return `<div class="comp"><span class="cname">${esc(nm)}${findPrep(nm)?' <small style="color:var(--salmon-deep)">仕込</small>':''}</span><input class="fld num" value="${fmtNum(c.qty)}" inputmode="decimal" placeholder="量" onfocus="this.value=cleanNum(this.value)" onblur="this.value=fmtNum(this.value)" oninput="upPComp(${j},${k},cleanNum(this.value))"><span class="cunit">${esc(anyUnitLabel(nm))}</span><span class="ccost">${yen(uc*q)}</span><button class="del" onclick="delPComp(${j},${k})">×</button></div>`;
+    return `<div class="comp"><select class="csel${findPrep(nm)?' isprep':''}" onchange="changePComp(${j},${k},this.value)">${pickerOptions(nm,p.name)}</select><input class="fld num" value="${fmtNum(c.qty)}" inputmode="decimal" placeholder="量" onfocus="this.value=cleanNum(this.value)" onblur="this.value=fmtNum(this.value)" oninput="upPComp(${j},${k},cleanNum(this.value))"><span class="cunit">${esc(anyUnitLabel(nm))}</span><span class="ccost">${yen(uc*q)}</span><button class="del" onclick="delPComp(${j},${k})">×</button></div>`;
   }).join(''):'<div style="padding:12px 14px;color:var(--muted);font-size:13px">下の欄から材料を追加してください。</div>';
   return `<div class="card" data-p="${j}">
     <div class="menu-top"><div style="flex:1"><input class="menu-name" value="${esc(p.name)}" placeholder="仕込み名" oninput="upPrep(${j},'name',this.value)"></div>
@@ -468,7 +544,7 @@ function menuCardHTML(m,j){
   const over=price>0&&rate>state.target,rateCls=price<=0?'':(over?'rate-over':'rate-good');
   const comps=m.components.length?m.components.map((c,k)=>{const nm=c.ingName,ok=anyExists(nm),uc=ok?anyUnitCost(nm):0,cc=uc*(parseFloat(c.qty)||0);
     if(!ok)return `<div class="comp missing"><span class="cname">(見つからない材料) ${esc(nm)}</span><span></span><span></span><span class="ccost">—</span><button class="del" onclick="delComp(${j},${k})">×</button></div>`;
-    return `<div class="comp"><span class="cname">${esc(nm)}${findPrep(nm)?' <small style="color:var(--salmon-deep)">仕込</small>':''}</span><input class="fld num" value="${fmtNum(c.qty)}" inputmode="decimal" placeholder="量" onfocus="this.value=cleanNum(this.value)" onblur="this.value=fmtNum(this.value)" oninput="upComp(${j},${k},cleanNum(this.value))"><span class="cunit">${esc(anyUnitLabel(nm))}</span><span class="ccost">${yen(cc)}</span><button class="del" onclick="delComp(${j},${k})">×</button></div>`;}).join(''):`<div style="padding:12px 14px;color:var(--muted);font-size:13px">下の欄から材料を追加してください。</div>`;
+    return `<div class="comp"><select class="csel${findPrep(nm)?' isprep':''}" onchange="changeComp(${j},${k},this.value)">${pickerOptions(nm)}</select><input class="fld num" value="${fmtNum(c.qty)}" inputmode="decimal" placeholder="量" onfocus="this.value=cleanNum(this.value)" onblur="this.value=fmtNum(this.value)" oninput="upComp(${j},${k},cleanNum(this.value))"><span class="cunit">${esc(anyUnitLabel(nm))}</span><span class="ccost">${yen(cc)}</span><button class="del" onclick="delComp(${j},${k})">×</button></div>`;}).join(''):`<div style="padding:12px 14px;color:var(--muted);font-size:13px">下の欄から材料を追加してください。</div>`;
   return `<div class="card" data-j="${j}">
     <div class="menu-top"><div style="flex:1"><input class="menu-name" value="${esc(m.name)}" placeholder="メニュー名" oninput="upMenu(${j},'name',this.value)"></div>
       <div class="price-wrap"><span class="yen">売価 ¥</span><input class="fld num" style="width:82px" value="${fmtNum(m.price)}" inputmode="decimal" placeholder="0" onfocus="this.value=cleanNum(this.value)" onblur="this.value=fmtNum(this.value)" oninput="upMenu(${j},'price',cleanNum(this.value))"></div>
@@ -577,8 +653,38 @@ function doPrint(){
   });
   h+='</div>';
 
-  // ③ 材料の仕入表
-  h+='<div class="p-sec"><h3>③ 材料の仕入表</h3><table class="p"><thead><tr>'
+  // ③ 仕込み一覧
+  const preps=(state.preps||[]).filter(p=>p.name);
+  h+='<div class="p-sec"><h3>③ 仕込み一覧（単価）</h3><table class="p"><thead><tr>'
+   +'<th class="l">仕込み名</th><th>完成量</th><th class="l">単位</th><th>仕込み原価</th><th>1単位あたり</th><th>材料数</th></tr></thead><tbody>';
+  if(!preps.length){ h+='<tr><td class="l" colspan="6">仕込みがありません</td></tr>'; }
+  preps.forEach(function(p){
+    const t=prepCost(p), y=parseFloat(p.yield)||0;
+    h+='<tr><td class="l">'+esc(p.name)+'</td><td>'+fmtNum(p.yield)+'</td><td class="l">'+esc(p.yieldUnit||'g')+'</td>'
+     +'<td>'+yen(t)+'</td><td>'+yen2(y?t/y:0)+'</td><td>'+p.components.length+'</td></tr>';
+  });
+  h+='</tbody></table></div>';
+
+  // ④ 仕込み別 詳細
+  h+='<div class="p-sec"><h3>④ 仕込み別 詳細（レシピ）</h3>';
+  preps.forEach(function(p){
+    const t=prepCost(p), y=parseFloat(p.yield)||0;
+    h+='<table class="p" style="margin-bottom:10px"><thead>'
+     +'<tr><th class="l" colspan="4">'+esc(p.name)+'　／　完成量 '+fmtNum(p.yield)+esc(p.yieldUnit||'g')
+     +'　仕込み原価 '+yen(t)+'　1'+esc(p.yieldUnit||'g')+'あたり '+yen2(y?t/y:0)+'</th></tr>'
+     +'<tr><th class="l">材料</th><th>使用量</th><th>単価</th><th>金額</th></tr></thead><tbody>';
+    if(!p.components.length){ h+='<tr><td class="l" colspan="4">材料が未登録</td></tr>'; }
+    p.components.forEach(function(c){
+      const ok=anyExists(c.ingName), uc=ok?anyUnitCost(c.ingName):0, q=parseFloat(c.qty)||0;
+      h+='<tr><td class="l">'+esc(c.ingName)+'</td><td>'+fmtNum(c.qty)+' '+esc(anyUnitLabel(c.ingName))+'</td>'
+       +'<td>'+(ok?yen2(uc):'—')+'</td><td>'+(ok?yen(uc*q):'—')+'</td></tr>';
+    });
+    h+='</tbody></table>';
+  });
+  h+='</div>';
+
+  // ⑤ 材料の仕入表
+  h+='<div class="p-sec"><h3>⑤ 材料の仕入表</h3><table class="p"><thead><tr>'
    +'<th class="l">材料名</th><th class="l">カテゴリ</th><th>仕入量</th><th class="l">単位</th><th>仕入価格</th><th>単価</th></tr></thead><tbody>';
   CATS.forEach(function(cat){
     const items=state.ingredients.filter(i=>(i.cat||'その他')===cat);
