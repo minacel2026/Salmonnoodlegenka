@@ -155,6 +155,7 @@
 </header>
 <nav class="tabs">
   <button data-tab="ing" class="active">材料 <span class="cnt" id="cntIng"></span></button>
+  <button data-tab="prep">仕込み <span class="cnt" id="cntPrep"></span></button>
   <button data-tab="menu">メニュー <span class="cnt" id="cntMenu"></span></button>
   <button data-tab="sum">結果まとめ</button>
   <button data-tab="hist">履歴</button>
@@ -164,10 +165,15 @@
     <div class="panel-head"><h2 class="mincho">材料の仕入れ</h2><span class="hint">仕入価格と量から単価を自動計算</span></div>
     <div id="ingBanner"></div>
     <div class="card">
-      <div class="lbl-row"><span>材料名</span><span>仕入量</span><span>単位</span><span>仕入価格</span><span></span></div>
+      <div class="lbl-row"><span>材料名</span><span>数量</span><span>単位</span><span>単価(¥)</span><span></span></div>
       <div id="ingList"></div>
       <div class="add-row"><button class="btn btn-primary" style="flex:1" onclick="addIng()">＋ 材料を追加</button></div>
     </div>
+  </section>
+  <section class="panel" id="panel-prep">
+    <div class="panel-head"><h2 class="mincho">仕込み</h2><span class="hint">材料と完成量から1単位あたりの単価を自動計算</span></div>
+    <div id="prepList"></div>
+    <button class="btn btn-primary" style="width:100%" onclick="addPrep()">＋ 仕込みを追加</button>
   </section>
   <section class="panel" id="panel-menu">
     <div class="panel-head"><h2 class="mincho">メニューと原価</h2><span class="hint">材料を選んで一杯の原価を計算</span></div>
@@ -190,7 +196,7 @@
 <script>
 /* ===== 接続先：Apps Script ウェブアプリのURL（末尾 /exec）=====
    ↓ この "https://script.google.com/macros/s/AKfycbxeDfuUZGYtFXkUspRk3MAEr_3yoEJj3iPwoQPKjyA-irseXD2-RVL7zIIUNINS07j-/exec" を、自分のデプロイURLに置き換えてください。 */
-const API_URL = "https://script.google.com/macros/s/AKfycbxeDfuUZGYtFXkUspRk3MAEr_3yoEJj3iPwoQPKjyA-irseXD2-RVL7zIIUNINS07j-/exec";
+const API_URL = "https://script.google.com/macros/s/AKfycbxsI0ifxaYiMNaeOKrYDpev8AQhHG6CkE0kWiAiqpz196OdVIF6scEkf1ZPQYs7DII_Kg/exec";
 const HAS_API = /^https:\/\/script\.google\.com\/macros\/s\//.test(API_URL);
 let __PASS = null;
 
@@ -233,15 +239,16 @@ function apiSave(state, logs){
 }
 
 /* ---------- state ---------- */
-const CATS=["サーモン・魚介","肉","調味料・オイル","野菜・きのこ","米・卵・乳","ドリンク","その他"];
+const CATS=["調理済み", "PB", "その他", "一般食材", "容器"];
 const UNITS=["g","ml","個","本","玉","枚","杯","袋","片","株"];
-let state={ingredients:[],menus:[],target:30};
+let state={ingredients:[],preps:[],menus:[],target:30};
 let saveTimer=null;
 
 /* ---------- seed (原価表 現在仕入値) ---------- */
-const SEED_ING=[["メイプルサーモン","サーモン・魚介",20970,10000,"g"],["01鮭パウダー","サーモン・魚介",20800,990,"g"],["ランプフィッシュキャビア","サーモン・魚介",650,50,"g"],["甘エビ","サーモン・魚介",1532,1000,"g"],["海老ベース","サーモン・魚介",698,1,"個"],["鶏胸肉","肉",650,1000,"g"],["豚肩ロース","肉",950,1000,"g"],["豚挽肉","肉",650,1000,"g"],["和牛","肉",3800,2000,"g"],["鹿肉ロースト","肉",3300,1,"個"],["李錦記オイスターソース","調味料・オイル",1518,750,"g"],["フィッシュソース(ナンプラー)","調味料・オイル",544,725,"ml"],["RFパルメザンパウダー","調味料・オイル",2320,1000,"g"],["ミックスチーズ(シュレッド)","調味料・オイル",1350,1000,"g"],["サラダ油","調味料・オイル",5800,16500,"g"],["白トリュフオイル","調味料・オイル",1530,250,"ml"],["オリーブオイル","調味料・オイル",1900,1000,"ml"],["黒胡椒ホール","調味料・オイル",356,100,"g"],["パプリカパウダー","調味料・オイル",611,225,"g"],["おろしニンニク","調味料・オイル",840,1000,"g"],["一味唐辛子","調味料・オイル",540,300,"g"],["糸唐辛子","調味料・オイル",1730,100,"g"],["朝天ラージャオメン(唐辛子)","調味料・オイル",1886,500,"g"],["ねりごま","調味料・オイル",1515,1000,"g"],["バジルペースト","調味料・オイル",2250,820,"g"],["ガーリックフレーク","調味料・オイル",2017,1000,"g"],["フライドガーリックフレーク","調味料・オイル",720,200,"g"],["バルサミコ","調味料・オイル",1750,380,"ml"],["だしご飯ベース","調味料・オイル",1549,1800,"ml"],["白だし","調味料・オイル",1262,1800,"ml"],["濃口醤油","調味料・オイル",544,1800,"ml"],["牡蠣だし醤油","調味料・オイル",340,400,"ml"],["伯方の塩","調味料・オイル",563,1000,"g"],["グラニュー糖","調味料・オイル",351,1000,"g"],["四川山椒油","調味料・オイル",2750,920,"g"],["食べるラー油","調味料・オイル",994,500,"g"],["いし本ラー油","調味料・オイル",2235,2000,"ml"],["フライドオニオン","調味料・オイル",1104,200,"g"],["マヨネーズ","調味料・オイル",658,1000,"g"],["コンソメ","調味料・オイル",7000,1000,"g"],["おろしわさび","調味料・オイル",815,500,"g"],["油缶","調味料・オイル",5600,2000,"g"],["冷凍キノコペースト","野菜・きのこ",1010,1000,"g"],["ごぼう","野菜・きのこ",188,2,"本"],["赤玉ねぎ","野菜・きのこ",238,1,"個"],["ジャガイモ","野菜・きのこ",680,1000,"g"],["水菜","野菜・きのこ",115,200,"g"],["レモン","野菜・きのこ",98,1,"個"],["ニンジン","野菜・きのこ",78,150,"g"],["しめじ","野菜・きのこ",178,200,"g"],["舞茸","野菜・きのこ",188,100,"g"],["ブロッコリースプラウト","野菜・きのこ",120,1,"個"],["蓮根","野菜・きのこ",1980,1000,"g"],["かぶ","野菜・きのこ",228,1,"個"],["卵","米・卵・乳",5280,10000,"g"],["無洗米","米・卵・乳",13889,25000,"g"],["豆乳","米・卵・乳",245,1000,"ml"],["石窯バゲット","米・卵・乳",268,213,"g"],["白ワイン","ドリンク",1724,1,"本"],["コーラ","ドリンク",116,1,"本"],["オレンジジュース","ドリンク",93,1,"本"],["ジンジャエール","ドリンク",107,1,"本"],["アサヒスーパードライ","ドリンク",208,1,"本"],["黒烏龍茶","ドリンク",548,1,"袋"],["ハイボール","ドリンク",153,1,"本"],["レモンサワー","ドリンク",131,1,"本"],["サッポロ","ドリンク",208,1,"本"]];
-const SEED_MENU=[["サーモン担担麺",1400,[]],["赤辛サーモン",1100,[]],["バジルサーモン",1200,[]],["コーラ",350,[["コーラ",1]]],["オレンジジュース",350,[["オレンジジュース",1]]],["ジンジャエール",350,[["ジンジャエール",1]]],["アサヒスーパードライ",650,[["アサヒスーパードライ",1]]],["ハイボール",500,[["ハイボール",1]]],["レモンサワー",500,[["レモンサワー",1]]],["サッポロ",650,[["サッポロ",1]]]];
-function buildSeed(){return {ingredients:SEED_ING.map(r=>({name:r[0],cat:r[1],price:r[2],amount:r[3],unit:r[4]})),menus:SEED_MENU.map(m=>({name:m[0],price:m[1],components:m[2].map(c=>({ingName:c[0],qty:c[1]}))})),target:30};}
+const SEED_ING=[["肉みそ", "調理済み", 0.784905, 1, "g"], ["鶏ハム", "調理済み", 0.65154, 1, "g"], ["豚レアチャーシュー", "調理済み", 0.935716, 1, "g"], ["サーモン飯", "調理済み", 63.37177, 1, "人前"], ["オイスミコ", "調理済み", 2.766662, 1, "g"], ["ミックスサラダ", "調理済み", 0.734472, 1, "g"], ["ゴボウフライ", "調理済み", 0.669697, 1, "g"], ["サーモンタルタル", "調理済み", 1.23102, 1, "g"], ["ポルチーニオイル", "調理済み", 2.413662, 1, "g"], ["FC粉サーモンカエシ", "調理済み", 3.411609, 1, "g"], ["キノコオイル", "調理済み", 0.491175, 1, "g"], ["チキンスープ", "調理済み", 0.147059, 1, "g"], ["豆乳チキンスープ", "調理済み", 0.204657, 1, "g"], ["味玉", "調理済み", 32.0, 1, "個"], ["既製品ラー油", "調理済み", 1.407667, 1, "g"], ["黒マー油", "調理済み", 0.41928, 1, "g"], ["ポルチーニペースト", "調理済み", 1.094732, 1, "g"], ["バジルオイル", "調理済み", 2.341339, 1, "g"], ["揚げキノコ", "調理済み", 0.951647, 1, "g"], ["トリュフキノコペースト", "調理済み", 1.295719, 1, "g"], ["ローストビーフ", "調理済み", 3.034465, 1, "g"], ["温泉卵", "調理済み", 27.0, 1, "個"], ["イモフライ", "調理済み", 0.616835, 1, "g"], ["鮭パウダー", "PB", 20.0, 1, "g"], ["冷凍キノコ", "PB", 1.08, 1, "g"], ["鮭そぼろ", "その他", 0.85, 1, "g"], ["01コンソメ", "PB", 7.0, 1, "g"], ["太麺", "PB", 62.0, 1, "玉"], ["細麺", "PB", 61.0, 1, "玉"], ["ちぢれ麺", "PB", 57.0, 1, "玉"], ["手もみ風麺(煮干し)", "PB", 57.0, 1, "玉"], ["細麺(煮干し)", "PB", 57.0, 1, "玉"], ["つけ麺", "PB", 77.0, 1, "玉"], ["平打ち麺", "PB", 58.0, 1, "玉"], ["平縮れ麺", "PB", 0.61, 1, "玉"], ["タカキ　石窯バゲット", "一般食材", 1.258216, 1, "g"], ["李錦紀オイスターソース", "一般食材", 2.130526, 1, "g"], ["ティプロス　フィッシュソース（ナンプラー", "一般食材", 0.750345, 1, "g"], ["RFパルメザンパウダー", "一般食材", 2.32, 1, "g"], ["CSミックスＤシュレッド", "一般食材", 1.35, 1, "g"], ["サラダ油", "一般食材", 0.339394, 1, "g"], ["大倉フーズ白トリュフオイル", "一般食材", 6.244898, 1, "g"], ["オリーブオイル", "一般食材", 1.938776, 1, "g"], ["黒胡椒ホール", "一般食材", 3.56, 1, "g"], ["カエンペッパー", "一般食材", 4.576531, 1, "g"], ["パプリカパウダー", "一般食材", 2.770975, 1, "g"], ["テーオーおろしニンニク", "一般食材", 0.857143, 1, "g"], ["テーオーおろし生姜", "一般食材", 0.887755, 1, "g"], ["一味唐辛子", "一般食材", 1.8, 1, "g"], ["糸唐辛子", "一般食材", 17.3, 1, "g"], ["三明　朝天ラージャオメン", "一般食材", 3.772, 1, "g"], ["大倉乾燥ポルチーニ", "一般食材", 20.05, 1, "g"], ["EBガラムマサラ", "一般食材", 3.875, 1, "g"], ["ねりごま", "一般食材", 1.515, 1, "g"], ["DSプレーンバジルペースト", "一般食材", 2.743902, 1, "g"], ["QPオイルソースガーリック&赤唐辛子", "一般食材", 1.04, 1, "g"], ["ユニ冷凍ほうれん草", "一般食材", 0.416842, 1, "g"], ["ヤマキだしご飯ベース", "一般食材", 0.860556, 1, "g"], ["白だし", "一般食材", 0.701111, 1, "g"], ["濃口醤油", "一般食材", 0.302222, 1, "g"], ["ヒガシマル牡蠣だし醤油", "一般食材", 0.85, 1, "g"], ["酢", "一般食材", 0.201111, 1, "g"], ["うま味調味料", "一般食材", 0.522, 1, "g"], ["伯方の塩", "一般食材", 0.563, 1, "g"], ["グラニュー糖", "一般食材", 0.351, 1, "g"], ["YOUKI四川山椒油", "一般食材", 2.98913, 1, "g"], ["三共食べるラー油", "一般食材", 1.988, 1, "g"], ["いし本ラー油", "一般食材", 1.1175, 1, "g"], ["辛子明太子チューブ", "一般食材", 3.66, 1, "g"], ["ギャバンランプフィッシュキャビア", "一般食材", 13.0, 1, "g"], ["フライドオニオン", "一般食材", 5.52, 1, "g"], ["マヨネーズ", "一般食材", 0.692632, 1, "g"], ["クリーンパックM", "一般食材", 27.0, 1, "個"], ["フライドガーリック", "一般食材", 2.017, 1, "g"], ["バルサミコ", "一般食材", 4.77551, 1, "g"], ["有塩バター", "一般食材", 1.89, 1, "g"], ["フレッシュトリュフ", "一般食材", 43.888889, 1, "g"], ["卸しわさび", "一般食材", 1.19, 1, "g"], ["ハインツ ローストビーフソースホース", "一般食材", 1.24, 1, "g"], ["牛モモ肉", "一般食材", 3.111111, 1, "g"], ["鶏胸肉", "一般食材", 0.65, 1, "g"], ["豚肩ロース", "一般食材", 0.95, 1, "g"], ["豚挽肉", "一般食材", 0.65, 1, "g"], ["ごぼう", "一般食材", 1.0, 1, "g"], ["赤玉ねぎ", "一般食材", 1.437198, 1, "g"], ["ジャガイモ", "一般食材", 0.85, 1, "g"], ["ミズナ", "一般食材", 0.676471, 1, "g"], ["スライスレモン", "一般食材", 8.166667, 1, "枚"], ["ニンジン", "一般食材", 0.611765, 1, "g"], ["エリンギ", "一般食材", 1.4, 1, "g"], ["しいたけ", "一般食材", 1.167, 1, "g"], ["しめじ", "一般食材", 0.89, 1, "g"], ["舞茸", "一般食材", 1.48, 1, "g"], ["エノキダケ", "一般食材", 0.988235, 1, "g"], ["春キャベツ", "一般食材", 0.0, 1, "g"], ["ミニトマト", "一般食材", 1.94, 1, "g"], ["蓮根ホール水煮", "一般食材", 0.78, 1, "g"], ["インゲン", "一般食材", 8.8, 1, "g"], ["伏見唐辛子", "一般食材", 8.8, 1, "g"], ["ヤングコーン", "一般食材", 3.116883, 1, "g"], ["無洗米", "一般食材", 0.55556, 1, "g"], ["トウニュウ", "一般食材", 0.245, 1, "g"], ["メイプルサーモン", "一般食材", 2.384, 1, "g"], ["水", "一般食材", 0.01, 1, "g"], ["うに", "その他", 9.5, 1, "g"], ["和牛モモ", "一般食材", 5.428571, 1, "g"], ["クルトン No.8", "一般食材", 2.75, 1, "g"], ["冷凍チャーシュー", "一般食材", 2.08, 1, "g"], ["ＭＦＰホット麺１６（５７）　白", "容器", 24.0, 1, "個"]];
+const SEED_PREP=[["肉みそ", 1325.0, "g", [["豚挽肉", 1000.0], ["濃口醤油", 75.0], ["李錦紀オイスターソース", 150.0], ["テーオーおろしニンニク", 25.0], ["グラニュー糖", 75.0]]], ["鶏ハム", 2090.0, "g", [["鶏胸肉", 2000.0], ["白だし", 80.0], ["伯方の塩", 10.0]]], ["豚レアチャーシュー", 2110.0, "g", [["豚肩ロース", 2000.0], ["伯方の塩", 20.0], ["白だし", 90.0]]], ["サーモン飯", 1780.0, "g", [["メイプルサーモン", 100.0], ["水", 850.0], ["FC粉サーモンカエシ", 30.0], ["キノコオイル", 50.0], ["ヤマキだしご飯ベース", 50.0], ["無洗米", 700.0]]], ["オイスミコ", 1580.0, "g", [["李錦紀オイスターソース", 1200.0], ["バルサミコ", 380.0]]], ["ミックスサラダ", 240.0, "g", [["ミズナ", 200.0], ["ニンジン", 20.0], ["赤玉ねぎ", 20.0]]], ["ゴボウフライ", 800.0, "g", [["ごぼう", 400.0], ["サラダ油", 400.0]]], ["サーモンタルタル", 640.0, "g", [["メイプルサーモン", 200.0], ["マヨネーズ", 400.0], ["ヒガシマル牡蠣だし醤油", 40.0]]], ["ポルチーニオイル", 1200.0, "g", [["大倉乾燥ポルチーニ", 100.0], ["フライドオニオン", 100.0], ["サラダ油", 1000.0]]], ["FC粉サーモンカエシ", 5990.0, "g", [["鮭パウダー", 990.0], ["水", 4000.0], ["伯方の塩", 400.0], ["ティプロス　フィッシュソース（ナンプラー", 400.0], ["グラニュー糖", 200.0]]], ["キノコオイル", 5050.0, "g", [["冷凍キノコ", 1000.0], ["サラダ油", 4000.0], ["テーオーおろしニンニク", 50.0]]], ["チキンスープ", 1020.0, "g", [["水", 1000.0], ["01コンソメ", 20.0]]], ["豆乳チキンスープ", 16320.0, "g", [["水", 12000.0], ["トウニュウ", 4000.0], ["01コンソメ", 320.0]]], ["味玉", 365.0, "g", [["クリーンパックM", 15.0], ["ヒガシマル牡蠣だし醤油", 100.0], ["ヤマキだしご飯ベース", 50.0], ["水", 200.0]]], ["既製品ラー油", 1500.0, "g", [["三共食べるラー油", 500.0], ["いし本ラー油", 1000.0]]], ["黒マー油", 4200.0, "g", [["サラダ油", 4000.0], ["フライドガーリック", 200.0]]], ["ポルチーニペースト", 524.0, "g", [["大倉乾燥ポルチーニ", 10.0], ["水", 100.0], ["伯方の塩", 4.0], ["しめじ", 200.0], ["舞茸", 100.0], ["トウニュウ", 100.0], ["オリーブオイル", 10.0]]], ["バジルオイル", 400.0, "g", [["DSプレーンバジルペースト", 200.0], ["オリーブオイル", 200.0]]], ["揚げキノコ", 40.0, "g", [["エリンギ", 8.0], ["舞茸", 8.0], ["しめじ", 8.0], ["エノキダケ", 8.0]]], ["トリュフキノコペースト", 558.0, "g", [["大倉フーズ白トリュフオイル", 40.0], ["伯方の塩", 8.0], ["しめじ", 200.0], ["舞茸", 100.0], ["トウニュウ", 100.0], ["オリーブオイル", 10.0], ["エノキダケ", 100.0]]], ["ローストビーフ", 413.0, "g", [["牛モモ肉", 400.0], ["伯方の塩", 8.0], ["テーオーおろしニンニク", 5.0]]], ["イモフライ", 30.0, "g", [["ジャガイモ", 20.0], ["サラダ油", 10.0]]]];
+const SEED_MENU=[["スタンダード", 1000, 1.1, [["平打ち麺", 1.0], ["豆乳チキンスープ", 200.0], ["FC粉サーモンカエシ", 30.0], ["キノコオイル", 50.0], ["豚レアチャーシュー", 25.0], ["黒マー油", 8.0], ["ごぼう", 16.0], ["パプリカパウダー", 0.1], ["オイスミコ", 5.0], ["ギャバンランプフィッシュキャビア", 0.2], ["ミックスサラダ", 10.0], ["タカキ　石窯バゲット", 12.0], ["メイプルサーモン", 15.0]]], ["赤", 950, 1.1, [["ちぢれ麺", 1.0], ["豆乳チキンスープ", 200.0], ["FC粉サーモンカエシ", 30.0], ["キノコオイル", 50.0], ["一味唐辛子", 2.0], ["豚レアチャーシュー", 25.0], ["既製品ラー油", 10.0], ["黒マー油", 8.0], ["ごぼう", 16.0], ["パプリカパウダー", 0.1], ["オイスミコ", 5.0], ["ギャバンランプフィッシュキャビア", 0.2], ["ミックスサラダ", 10.0], ["三明　朝天ラージャオメン", 3.0], ["メイプルサーモン", 15.0]]], ["バジル", 1000, 1.1, [["平打ち麺", 1.0], ["豆乳チキンスープ", 200.0], ["FC粉サーモンカエシ", 30.0], ["キノコオイル", 15.0], ["DSプレーンバジルペースト", 15.0], ["豚レアチャーシュー", 25.0], ["バジルオイル", 8.0], ["ごぼう", 16.0], ["パプリカパウダー", 0.1], ["ギャバンランプフィッシュキャビア", 0.2], ["ミックスサラダ", 10.0], ["タカキ　石窯バゲット", 12.0], ["メイプルサーモン", 15.0], ["RFパルメザンパウダー", 8.0]]], ["坦々麺", 1100, 1.1, [["ちぢれ麺", 1.0], ["豆乳チキンスープ", 200.0], ["FC粉サーモンカエシ", 30.0], ["キノコオイル", 50.0], ["ねりごま", 15.0], ["豚レアチャーシュー", 25.0], ["一味唐辛子", 3.0], ["既製品ラー油", 10.0], ["黒マー油", 10.0], ["ごぼう", 16.0], ["パプリカパウダー", 0.1], ["オイスミコ", 5.0], ["ギャバンランプフィッシュキャビア", 0.2], ["ミックスサラダ", 15.0], ["肉みそ", 20.0], ["三明　朝天ラージャオメン", 3.0], ["メイプルサーモン", 10.0], ["YOUKI四川山椒油", 5.0]]], ["汁なし", 1150, 1.1, [["平打ち麺", 1.0], ["豆乳チキンスープ", 30.0], ["FC粉サーモンカエシ", 30.0], ["キノコオイル", 50.0], ["豆乳チキンスープ", 30.0], ["豚レアチャーシュー", 25.0], ["サーモンタルタル", 20.0], ["黒マー油", 8.0], ["ごぼう", 16.0], ["パプリカパウダー", 0.1], ["オイスミコ", 5.0], ["ギャバンランプフィッシュキャビア", 0.2], ["ミックスサラダ", 10.0], ["タカキ　石窯バゲット", 12.0], ["温泉卵", 1.0], ["メイプルサーモン", 15.0]]], ["サーモン飯", 250, 1.1, [["サーモン飯", 1.0], ["メイプルサーモン", 10.0]]], ["スタンダードセット", 1180, 1.1, [["平打ち麺", 1.0], ["豆乳チキンスープ", 200.0], ["FC粉サーモンカエシ", 30.0], ["キノコオイル", 50.0], ["豚レアチャーシュー", 25.0], ["黒マー油", 8.0], ["ごぼう", 16.0], ["パプリカパウダー", 0.1], ["オイスミコ", 5.0], ["ギャバンランプフィッシュキャビア", 0.2], ["ミックスサラダ", 10.0], ["タカキ　石窯バゲット", 12.0], ["メイプルサーモン", 15.0], ["サーモン飯", 1.0], ["メイプルサーモン", 10.0]]], ["赤セット", 1200, 1.1, [["平打ち麺", 1.0], ["豆乳チキンスープ", 200.0], ["FC粉サーモンカエシ", 30.0], ["キノコオイル", 50.0], ["一味唐辛子", 3.0], ["豚レアチャーシュー", 25.0], ["既製品ラー油", 10.0], ["黒マー油", 8.0], ["ごぼう", 16.0], ["パプリカパウダー", 0.1], ["オイスミコ", 5.0], ["ギャバンランプフィッシュキャビア", 0.2], ["ミックスサラダ", 10.0], ["三明　朝天ラージャオメン", 3.0], ["メイプルサーモン", 15.0], ["サーモン飯", 1.0], ["メイプルサーモン", 10.0]]], ["バジルセット", 1250, 1.1, [["平打ち麺", 1.0], ["豆乳チキンスープ", 200.0], ["FC粉サーモンカエシ", 30.0], ["キノコオイル", 50.0], ["豚レアチャーシュー", 25.0], ["バジルオイル", 5.0], ["バジルオイル", 8.0], ["ごぼう", 16.0], ["パプリカパウダー", 0.1], ["ギャバンランプフィッシュキャビア", 0.2], ["ミックスサラダ", 10.0], ["タカキ　石窯バゲット", 12.0], ["メイプルサーモン", 15.0], ["RFパルメザンパウダー", 8.0], ["サーモン飯", 1.0], ["メイプルサーモン", 10.0]]], ["坦々麺セット", 1350, 1.1, [["ちぢれ麺", 1.0], ["豆乳チキンスープ", 200.0], ["FC粉サーモンカエシ", 30.0], ["キノコオイル", 50.0], ["ねりごま", 15.0], ["豚レアチャーシュー", 25.0], ["一味唐辛子", 3.0], ["既製品ラー油", 10.0], ["黒マー油", 10.0], ["ごぼう", 16.0], ["パプリカパウダー", 0.1], ["オイスミコ", 5.0], ["ギャバンランプフィッシュキャビア", 0.2], ["ミックスサラダ", 15.0], ["肉みそ", 20.0], ["三明　朝天ラージャオメン", 3.0], ["メイプルサーモン", 15.0], ["サーモン飯", 1.0], ["メイプルサーモン", 10.0]]], ["汁なしセット", 1300, 1.1, [["平打ち麺", 1.0], ["豆乳チキンスープ", 30.0], ["FC粉サーモンカエシ", 30.0], ["キノコオイル", 50.0], ["豆乳チキンスープ", 30.0], ["豚レアチャーシュー", 25.0], ["サーモンタルタル", 20.0], ["黒マー油", 8.0], ["ごぼう", 16.0], ["パプリカパウダー", 0.1], ["オイスミコ", 5.0], ["ギャバンランプフィッシュキャビア", 0.2], ["ミックスサラダ", 10.0], ["タカキ　石窯バゲット", 12.0], ["温泉卵", 1.0], ["メイプルサーモン", 15.0], ["チキンスープ", 120.0], ["サーモン飯", 1.0], ["メイプルサーモン", 10.0]]], ["ポルチーニ", 1300, 1.1, [["平打ち麺", 1.0], ["豆乳チキンスープ", 200.0], ["FC粉サーモンカエシ", 30.0], ["キノコオイル", 50.0], ["豚レアチャーシュー", 25.0], ["ポルチーニペースト", 20.0], ["ポルチーニオイル", 10.0], ["ごぼう", 16.0], ["パプリカパウダー", 0.1], ["オイスミコ", 5.0], ["ギャバンランプフィッシュキャビア", 0.2], ["ミックスサラダ", 10.0], ["タカキ　石窯バゲット", 12.0], ["メイプルサーモン", 15.0], ["揚げキノコ", 30.0]]], ["炙りチャーシュー丼", 700, 1.0, [["サーモン飯", 1.5], ["豚レアチャーシュー", 50.0], ["ミックスサラダ", 3.0]]], ["単品サーモン飯", 500, 1.0, [["サーモン飯", 1.5], ["サーモンタルタル", 20.0], ["メイプルサーモン", 10.0]]], ["限定丼", 700, 1.0, [["サーモン飯", 1.4], ["サーモンタルタル", 20.0], ["メイプルサーモン", 10.0], ["ミックスサラダ", 3.0], ["ゴボウフライ", 1.6]]], ["ミニチャー丼セット", 300, 1.0, [["サーモン飯", 1.0], ["豚レアチャーシュー", 30.0]]], ["和牛　スタンダード", 3000, 1.08, [["平打ち麺", 1.0], ["豆乳チキンスープ", 200.0], ["FC粉サーモンカエシ", 30.0], ["キノコオイル", 50.0], ["黒マー油", 4.0], ["パプリカパウダー", 0.1], ["オイスミコ", 5.0], ["ギャバンランプフィッシュキャビア", 0.2], ["ミックスサラダ", 10.0], ["タカキ　石窯バゲット", 12.0], ["メイプルサーモン", 15.0], ["和牛モモ", 80.0], ["卸しわさび", 5.0], ["トリュフキノコペースト", 5.0]]], ["和牛　赤", 3100, 1.1, [["平打ち麺", 1.0], ["豆乳チキンスープ", 200.0], ["FC粉サーモンカエシ", 30.0], ["キノコオイル", 50.0], ["一味唐辛子", 2.0], ["既製品ラー油", 8.0], ["黒マー油", 4.0], ["パプリカパウダー", 0.1], ["オイスミコ", 5.0], ["ギャバンランプフィッシュキャビア", 0.2], ["ミックスサラダ", 20.0], ["タカキ　石窯バゲット", 8.0], ["メイプルサーモン", 15.0], ["和牛モモ", 80.0], ["トリュフキノコペースト", 5.0], ["卸しわさび", 5.0]]], ["和牛　バジル", 3200, 1.1, [["平打ち麺", 1.0], ["豆乳チキンスープ", 200.0], ["FC粉サーモンカエシ", 30.0], ["キノコオイル", 15.0], ["DSプレーンバジルペースト", 15.0], ["バジルオイル", 8.0], ["パプリカパウダー", 0.1], ["オイスミコ", 5.0], ["ギャバンランプフィッシュキャビア", 0.2], ["ミックスサラダ", 20.0], ["タカキ　石窯バゲット", 8.0], ["メイプルサーモン", 15.0], ["和牛モモ", 80.0], ["トリュフキノコペースト", 5.0], ["卸しわさび", 5.0]]], ["和牛　担々麺", 3250, 1.1, [["平打ち麺", 1.0], ["豆乳チキンスープ", 170.0], ["FC粉サーモンカエシ", 30.0], ["キノコオイル", 33.0], ["ねりごま", 7.0], ["一味唐辛子", 3.0], ["既製品ラー油", 10.0], ["黒マー油", 4.0], ["パプリカパウダー", 0.1], ["オイスミコ", 5.0], ["ギャバンランプフィッシュキャビア", 0.2], ["ミックスサラダ", 20.0], ["タカキ　石窯バゲット", 8.0], ["肉みそ", 20.0], ["メイプルサーモン", 15.0], ["和牛モモ", 80.0], ["トリュフキノコペースト", 5.0], ["卸しわさび", 5.0]]], ["和牛チャーシュー丼", 1200, 1.0, [["サーモン飯", 1.4], ["和牛モモ", 60.0], ["ミックスサラダ", 3.0], ["ゴボウフライ", 1.6], ["ハインツ ローストビーフソースホース", 0.0], ["オイスミコ", 2.0], ["CSミックスＤシュレッド", 0.0]]], ["スタンダード（テイクアウト）", 500, 1.1, [["平打ち麺", 0.5], ["豆乳チキンスープ", 100.0], ["FC粉サーモンカエシ", 15.0], ["キノコオイル", 25.0], ["黒マー油", 4.0], ["ごぼう", 8.0], ["ミックスサラダ", 5.0], ["メイプルサーモン", 7.5]]], ["スタンダード（930円）", 930, 1.1, [["平打ち麺", 1.0], ["豆乳チキンスープ", 200.0], ["FC粉サーモンカエシ", 30.0], ["キノコオイル", 50.0], ["豚レアチャーシュー", 25.0], ["黒マー油", 8.0], ["ごぼう", 16.0], ["パプリカパウダー", 0.1], ["オイスミコ", 5.0], ["ギャバンランプフィッシュキャビア", 0.2], ["ミックスサラダ", 10.0], ["タカキ　石窯バゲット", 12.0], ["メイプルサーモン", 15.0]]], ["汁なし（1050円）", 1050, 1.1, [["平打ち麺", 1.0], ["豆乳チキンスープ", 50.0], ["FC粉サーモンカエシ", 25.0], ["キノコオイル", 50.0], ["豚レアチャーシュー", 25.0], ["黒マー油", 8.0], ["ごぼう", 16.0], ["パプリカパウダー", 0.1], ["オイスミコ", 5.0], ["ギャバンランプフィッシュキャビア", 0.2], ["ミックスサラダ", 10.0], ["タカキ　石窯バゲット", 12.0], ["温泉卵", 1.0], ["メイプルサーモン", 15.0], ["サーモンタルタル", 20.0]]], ["汁なし　赤", 950, 1.1, [["ちぢれ麺", 1.0], ["豆乳チキンスープ", 50.0], ["FC粉サーモンカエシ", 25.0], ["キノコオイル", 50.0], ["一味唐辛子", 2.0], ["豚レアチャーシュー", 25.0], ["既製品ラー油", 10.0], ["黒マー油", 8.0], ["ごぼう", 16.0], ["パプリカパウダー", 0.1], ["オイスミコ", 5.0], ["ギャバンランプフィッシュキャビア", 0.2], ["ミックスサラダ", 10.0], ["三明　朝天ラージャオメン", 3.0], ["メイプルサーモン", 15.0]]], ["汁なし　バジル", 1000, 1.1, [["平打ち麺", 1.0], ["豆乳チキンスープ", 50.0], ["FC粉サーモンカエシ", 25.0], ["キノコオイル", 15.0], ["DSプレーンバジルペースト", 15.0], ["豚レアチャーシュー", 25.0], ["バジルオイル", 10.0], ["ごぼう", 16.0], ["パプリカパウダー", 0.1], ["ギャバンランプフィッシュキャビア", 0.2], ["ミックスサラダ", 10.0], ["タカキ　石窯バゲット", 12.0], ["メイプルサーモン", 15.0], ["RFパルメザンパウダー", 4.0]]], ["汁なし　坦々麺", 1100, 1.1, [["ちぢれ麺", 1.0], ["豆乳チキンスープ", 50.0], ["FC粉サーモンカエシ", 25.0], ["キノコオイル", 50.0], ["ねりごま", 15.0], ["豚レアチャーシュー", 25.0], ["一味唐辛子", 3.0], ["既製品ラー油", 10.0], ["黒マー油", 10.0], ["ごぼう", 16.0], ["パプリカパウダー", 0.1], ["オイスミコ", 5.0], ["ギャバンランプフィッシュキャビア", 0.2], ["ミックスサラダ", 15.0], ["肉みそ", 20.0], ["三明　朝天ラージャオメン", 3.0], ["メイプルサーモン", 10.0], ["YOUKI四川山椒油", 5.0]]]];
+function buildSeed(){return {ingredients:SEED_ING.map(r=>({name:r[0],cat:r[1],price:r[2],amount:r[3],unit:r[4]})),preps:SEED_PREP.map(p=>({name:p[0],yield:p[1],yieldUnit:p[2],components:p[3].map(c=>({ingName:c[0],qty:c[1]}))})),menus:SEED_MENU.map(m=>({name:m[0],price:m[1],mult:m[2],components:m[3].map(c=>({ingName:c[0],qty:c[1]}))})),target:30};}
 
 /* ---------- helpers ---------- */
 const yen=n=>"¥"+Math.round(n).toLocaleString('ja-JP');
@@ -250,8 +257,42 @@ function fmtNum(v){if(v===''||v==null)return '';const n=Number(String(v).replace
 function cleanNum(v){return String(v).replace(/,/g,'');}
 function esc(s){return String(s??'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');}
 function findIng(name){return state.ingredients.find(i=>i.name===name);}
+function findPrep(name){return (state.preps||[]).find(p=>p.name===name);}
+/* 仕込みの原価（中で他の仕込みを使っても計算できる。循環は防止） */
+function prepCost(p,seen){
+  seen=seen||{}; if(!p||seen[p.name])return 0; seen[p.name]=1;
+  let c=0;
+  (p.components||[]).forEach(function(x){
+    const q=parseFloat(x.qty)||0;
+    const sub=findPrep(x.ingName);
+    if(sub){ c+=prepUnit(sub,seen)*q; return; }
+    const ing=findIng(x.ingName); if(ing) c+=unitCost(ing)*q;
+  });
+  return c;
+}
+function prepUnit(p,seen){
+  const y=parseFloat(p&&p.yield)||0; if(!y)return 0;
+  return prepCost(p,seen)/y;
+}
+/* 名前から単価を引く：仕込み優先、無ければ材料 */
+/* 仕込みの「完成量の単位」と材料マスタの単位が同じときだけ、仕込みから計算した
+   単価を使う。違うとき（例：仕込みはg・メニューでは個/人前）はマスタの単価を使う。 */
+function prepUsable(p,i){ if(!p) return false; if(!i) return true;
+  return String(p.yieldUnit||'g')===String(i.unit||'g'); }
+function anyUnitCost(name){
+  const p=findPrep(name), i=findIng(name);
+  if(prepUsable(p,i)) return prepUnit(p);
+  return i?unitCost(i):(p?prepUnit(p):0);
+}
+function anyUnitLabel(name){
+  const p=findPrep(name), i=findIng(name);
+  if(prepUsable(p,i)) return (p.yieldUnit||'g');
+  return i?i.unit:(p?(p.yieldUnit||'g'):'');
+}
+function anyExists(name){ return !!(findPrep(name)||findIng(name)); }
 function unitCost(ing){const a=parseFloat(ing.amount),p=parseFloat(ing.price);if(!a||a<=0||isNaN(p))return 0;return p/a;}
-function menuCost(m){let c=0;for(const comp of m.components){const ing=findIng(comp.ingName);if(ing)c+=unitCost(ing)*(parseFloat(comp.qty)||0);}return c;}
+function menuCost(m){let c=0;for(const comp of m.components){if(anyExists(comp.ingName))c+=anyUnitCost(comp.ingName)*(parseFloat(comp.qty)||0);}
+  const mu=parseFloat(m.mult); return c*((isNaN(mu)||mu<=0)?1:mu);}
 
 /* ---------- save ---------- */
 function setSave(cls,txt){const b=document.getElementById('savebox');b.className='savebox '+cls;document.getElementById('savetext').textContent=txt;}
@@ -303,6 +344,7 @@ function buildLogs(beforeStr, afterStr){
     if(!am[k]){ out.push({kind:'メニュー追加',text:k+'（売価 '+yenv(bm[k].price)+'）'}); return; }
     const x=am[k],y=bm[k]; const ch=[];
     if(String(x.price)!==String(y.price)) ch.push('売価 '+yenv(x.price)+'→'+yenv(y.price));
+    if(String(x.mult||1)!==String(y.mult||1)) ch.push('係数 ×'+(x.mult||1)+'→×'+(y.mult||1));
     const cs=o=>(o.components||[]).map(c=>c.ingName+':'+c.qty).join(',');
     if(cs(x)!==cs(y)){
       const bx=(x.components||[]).length, by=(y.components||[]).length;
@@ -360,17 +402,77 @@ function delIng(i){const ing=state.ingredients[i];const used=state.menus.some(m=
   if(used&&!confirm(`「${ing.name||'この材料'}」はメニューで使われています。削除しますか？`))return;
   state.ingredients.splice(i,1);renderIng();renderMenus();scheduleSave();}
 
+
+/* ---------- 仕込み ---------- */
+function prepOptsHTML(){
+  let h='<option value="">＋ 材料・仕込みを選ぶ</option>';
+  if((state.preps||[]).length){
+    h+='<optgroup label="■ 仕込み">'+state.preps.map(p=>`<option value="${esc(p.name)}">${esc(p.name||'(無名)')}</option>`).join('')+'</optgroup>';
+  }
+  CATS.forEach(function(cat){
+    const items=state.ingredients.filter(i=>(i.cat||'その他')===cat);
+    if(!items.length)return;
+    h+=`<optgroup label="${cat}">`+items.map(i=>`<option value="${esc(i.name)}">${esc(i.name||'(無名)')}</option>`).join('')+`</optgroup>`;
+  });
+  return h;
+}
+function prepCardHTML(p,j){
+  const total=prepCost(p), y=parseFloat(p.yield)||0, per=y?total/y:0;
+  const comps=p.components.length?p.components.map(function(c,k){
+    const nm=c.ingName, ok=anyExists(nm), uc=ok?anyUnitCost(nm):0, q=parseFloat(c.qty)||0;
+    if(!ok)return `<div class="comp missing"><span class="cname">(見つからない材料) ${esc(nm)}</span><span></span><span></span><span class="ccost">—</span><button class="del" onclick="delPComp(${j},${k})">×</button></div>`;
+    return `<div class="comp"><span class="cname">${esc(nm)}${findPrep(nm)?' <small style="color:var(--salmon-deep)">仕込</small>':''}</span><input class="fld num" value="${fmtNum(c.qty)}" inputmode="decimal" placeholder="量" onfocus="this.value=cleanNum(this.value)" onblur="this.value=fmtNum(this.value)" oninput="upPComp(${j},${k},cleanNum(this.value))"><span class="cunit">${esc(anyUnitLabel(nm))}</span><span class="ccost">${yen(uc*q)}</span><button class="del" onclick="delPComp(${j},${k})">×</button></div>`;
+  }).join(''):'<div style="padding:12px 14px;color:var(--muted);font-size:13px">下の欄から材料を追加してください。</div>';
+  return `<div class="card" data-p="${j}">
+    <div class="menu-top"><div style="flex:1"><input class="menu-name" value="${esc(p.name)}" placeholder="仕込み名" oninput="upPrep(${j},'name',this.value)"></div>
+      <div class="price-wrap"><span class="yen">完成量</span><input class="fld num" style="width:78px" value="${fmtNum(p.yield)}" inputmode="decimal" placeholder="0" onfocus="this.value=cleanNum(this.value)" onblur="this.value=fmtNum(this.value)" oninput="upPrep(${j},'yield',cleanNum(this.value))"><input class="fld" style="width:56px" value="${esc(p.yieldUnit||'g')}" oninput="upPrep(${j},'yieldUnit',this.value)"></div>
+      <button class="del" onclick="delPrep(${j})">×</button></div>
+    <div class="metrics">
+      <div class="metric"><div class="k">仕込み原価</div><div class="v" data-pm="total">${yen(total)}</div></div>
+      <div class="metric"><div class="k">1${esc(p.yieldUnit||'g')}あたり</div><div class="v" data-pm="per">${yen2(per)}</div></div>
+    </div>
+    <div data-pcomps>${comps}</div>
+    <div class="comp-add"><select class="fld" onchange="addPComp(${j},this.value);this.value='';">${prepOptsHTML()}</select></div>
+  </div>`;
+}
+function renderPreps(){
+  const el=document.getElementById('prepList'); if(!el)return;
+  state.preps=state.preps||[];
+  if(!state.preps.length){ el.innerHTML='<div class="card"><div class="empty"><div class="big">まだ仕込みがありません</div>「仕込みを追加」で作成できます。</div></div>'; }
+  else el.innerHTML=state.preps.map((p,j)=>prepCardHTML(p,j)).join('');
+  const cn=document.getElementById('cntPrep'); if(cn)cn.textContent=state.preps.length?`(${state.preps.length})`:'';
+}
+function addPrep(){ state.preps=state.preps||[]; state.preps.push({name:"",yield:"",yieldUnit:"g",components:[]}); renderPreps(); scheduleSave(); }
+function upPrep(j,f,v){ const p=state.preps[j]; if(!p)return; const old=p.name; p[f]=v;
+  if(f==='name'){ state.menus.forEach(m=>m.components.forEach(c=>{if(c.ingName===old)c.ingName=v;}));
+                  state.preps.forEach(q=>q.components.forEach(c=>{if(c.ingName===old)c.ingName=v;})); }
+  renderPreps(); renderMenusLive(); scheduleSave(); }
+function delPrep(j){ const p=state.preps[j];
+  const used=state.menus.some(m=>m.components.some(c=>c.ingName===p.name))||state.preps.some(q=>q!==p&&q.components.some(c=>c.ingName===p.name));
+  if(used&&!confirm(`「${p.name||'この仕込み'}」は使われています。削除しますか？`))return;
+  state.preps.splice(j,1); renderPreps(); renderMenus(); scheduleSave(); }
+function addPComp(j,name){ if(!name)return; if(state.preps[j].name===name){toast('自分自身は追加できません');return;} state.preps[j].components.push({ingName:name,qty:""}); renderPreps(); scheduleSave(); }
+function upPComp(j,k,v){ const c=state.preps[j].components[k]; if(!c)return; c.qty=v; refreshPrep(j); renderMenusLive(); scheduleSave(); }
+function delPComp(j,k){ state.preps[j].components.splice(k,1); renderPreps(); renderMenusLive(); scheduleSave(); }
+function refreshPrep(j){ const p=state.preps[j],card=document.querySelector(`[data-p="${j}"]`); if(!card)return;
+  const total=prepCost(p),y=parseFloat(p.yield)||0;
+  card.querySelector('[data-pm="total"]').textContent=yen(total);
+  card.querySelector('[data-pm="per"]').textContent=yen2(y?total/y:0);
+  card.querySelectorAll('[data-pcomps] .comp').forEach(function(row,k){ const c=p.components[k]; if(!c||!anyExists(c.ingName))return;
+    const ce=row.querySelector('.ccost'); if(ce)ce.textContent=yen(anyUnitCost(c.ingName)*(parseFloat(c.qty)||0)); }); }
+
 /* ---------- メニュー ---------- */
-function ingOptsHTML(){let h='<option value="">＋ 材料を選ぶ</option>';CATS.forEach(cat=>{const items=state.ingredients.filter(i=>(i.cat||'その他')===cat);if(!items.length)return;h+=`<optgroup label="${cat}">`+items.map(i=>`<option value="${esc(i.name)}">${esc(i.name||'(無名)')}</option>`).join('')+`</optgroup>`;});return h;}
+function ingOptsHTML(){ return prepOptsHTML(); }
 function menuCardHTML(m,j){
   const cost=menuCost(m),price=parseFloat(m.price)||0,rate=price>0?cost/price*100:0,profit=price-cost;
   const over=price>0&&rate>state.target,rateCls=price<=0?'':(over?'rate-over':'rate-good');
-  const comps=m.components.length?m.components.map((c,k)=>{const ing=findIng(c.ingName),uc=ing?unitCost(ing):0,cc=uc*(parseFloat(c.qty)||0);
-    if(!ing)return `<div class="comp missing"><span class="cname">(見つからない材料)</span><span></span><span></span><span class="ccost">—</span><button class="del" onclick="delComp(${j},${k})">×</button></div>`;
-    return `<div class="comp"><span class="cname">${esc(ing.name)}</span><input class="fld num" value="${fmtNum(c.qty)}" inputmode="decimal" placeholder="量" onfocus="this.value=cleanNum(this.value)" onblur="this.value=fmtNum(this.value)" oninput="upComp(${j},${k},cleanNum(this.value))"><span class="cunit">${ing.unit}</span><span class="ccost">${yen(cc)}</span><button class="del" onclick="delComp(${j},${k})">×</button></div>`;}).join(''):`<div style="padding:12px 14px;color:var(--muted);font-size:13px">下の欄から材料を追加してください。</div>`;
+  const comps=m.components.length?m.components.map((c,k)=>{const nm=c.ingName,ok=anyExists(nm),uc=ok?anyUnitCost(nm):0,cc=uc*(parseFloat(c.qty)||0);
+    if(!ok)return `<div class="comp missing"><span class="cname">(見つからない材料) ${esc(nm)}</span><span></span><span></span><span class="ccost">—</span><button class="del" onclick="delComp(${j},${k})">×</button></div>`;
+    return `<div class="comp"><span class="cname">${esc(nm)}${findPrep(nm)?' <small style="color:var(--salmon-deep)">仕込</small>':''}</span><input class="fld num" value="${fmtNum(c.qty)}" inputmode="decimal" placeholder="量" onfocus="this.value=cleanNum(this.value)" onblur="this.value=fmtNum(this.value)" oninput="upComp(${j},${k},cleanNum(this.value))"><span class="cunit">${esc(anyUnitLabel(nm))}</span><span class="ccost">${yen(cc)}</span><button class="del" onclick="delComp(${j},${k})">×</button></div>`;}).join(''):`<div style="padding:12px 14px;color:var(--muted);font-size:13px">下の欄から材料を追加してください。</div>`;
   return `<div class="card" data-j="${j}">
     <div class="menu-top"><div style="flex:1"><input class="menu-name" value="${esc(m.name)}" placeholder="メニュー名" oninput="upMenu(${j},'name',this.value)"></div>
       <div class="price-wrap"><span class="yen">売価 ¥</span><input class="fld num" style="width:82px" value="${fmtNum(m.price)}" inputmode="decimal" placeholder="0" onfocus="this.value=cleanNum(this.value)" onblur="this.value=fmtNum(this.value)" oninput="upMenu(${j},'price',cleanNum(this.value))"></div>
+      <div class="price-wrap"><span class="yen">係数 ×</span><input class="fld num" style="width:56px" value="${m.mult==null?1:m.mult}" inputmode="decimal" placeholder="1" title="ロス・税などの掛け率（1でなし）" oninput="upMenu(${j},'mult',cleanNum(this.value))"></div>
       <button class="del" onclick="delMenu(${j})">×</button></div>
     <div class="metrics">
       <div class="metric"><div class="k">原価</div><div class="v" data-m="cost">${yen(cost)}</div></div>
@@ -395,7 +497,7 @@ function refreshCard(j){const m=state.menus[j];const card=document.querySelector
   card.querySelector('[data-m="cost"]').textContent=yen(cost);
   const r=card.querySelector('[data-m="rate"]');r.innerHTML=price>0?rate.toFixed(1)+'<small>%</small>':'—';r.className='v '+(price<=0?'':(over?'rate-over':'rate-good'));
   card.querySelector('[data-m="profit"]').textContent=price>0?yen(profit):'—';
-  card.querySelectorAll('[data-comps] .comp').forEach((row,k)=>{const c=m.components[k];if(!c)return;const ing=findIng(c.ingName);if(!ing)return;const ce=row.querySelector('.ccost');if(ce)ce.textContent=yen(unitCost(ing)*(parseFloat(c.qty)||0));});}
+  card.querySelectorAll('[data-comps] .comp').forEach((row,k)=>{const c=m.components[k];if(!c||!anyExists(c.ingName))return;const ce=row.querySelector('.ccost');if(ce)ce.textContent=yen(anyUnitCost(c.ingName)*(parseFloat(c.qty)||0));});}
 function renderMenusLive(){state.menus.forEach((m,j)=>refreshCard(j));}
 
 /* ---------- 結果まとめ ---------- */
@@ -423,9 +525,9 @@ function renderSum(){
 
 /* ---------- misc ---------- */
 function seed(){if((state.ingredients.length||state.menus.length)&&!confirm("原価表を読み込みます。現在の内容は置き換わります。よろしいですか？"))return;state=buildSeed();renderAll();scheduleSave();toast("原価表を読み込みました");}
-function renderAll(){renderIng();renderMenus();renderSum();document.getElementById('targetInput').value=state.target;}
+function renderAll(){renderIng();renderPreps();renderMenus();renderSum();document.getElementById('targetInput').value=state.target;}
 let toastT;function toast(m){const t=document.getElementById('toast');t.textContent=m;t.classList.add('show');clearTimeout(toastT);toastT=setTimeout(()=>t.classList.remove('show'),1900);}
-function switchTab(name){document.querySelectorAll('nav.tabs button').forEach(b=>b.classList.toggle('active',b.dataset.tab===name));document.querySelectorAll('.panel').forEach(p=>p.classList.toggle('active',p.id==='panel-'+name));if(name==='sum')renderSum();if(name==='hist')renderHist();}
+function switchTab(name){document.querySelectorAll('nav.tabs button').forEach(b=>b.classList.toggle('active',b.dataset.tab===name));document.querySelectorAll('.panel').forEach(p=>p.classList.toggle('active',p.id==='panel-'+name));if(name==='sum')renderSum();if(name==='hist')renderHist();if(name==='prep')renderPreps();}
 document.querySelectorAll('nav.tabs button').forEach(b=>b.addEventListener('click',()=>switchTab(b.dataset.tab)));
 document.getElementById('targetInput').addEventListener('input',e=>{const v=parseFloat(e.target.value);state.target=isNaN(v)?0:v;renderMenus();renderSum();scheduleSave();});
 
