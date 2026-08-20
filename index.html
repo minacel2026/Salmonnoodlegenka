@@ -119,6 +119,42 @@
   .hist .k{flex:0 0 auto;font-size:10.5px;font-weight:700;border-radius:20px;padding:2px 9px;background:var(--salmon-soft);color:var(--salmon-deep);white-space:nowrap}
   .hist .x{flex:1}
   .toolbar{display:flex;gap:8px;flex-wrap:wrap;margin-bottom:14px}
+  .boot{position:fixed;inset:0;z-index:90;background:var(--paper);display:flex;flex-direction:column;align-items:center;justify-content:center;gap:16px}
+  .boot img{height:54px;opacity:.9}
+  .boot .msg{font-family:"Shippori Mincho B1",serif;font-size:15px;color:var(--ink);letter-spacing:.08em}
+  .boot .sub{font-size:12px;color:var(--muted);margin-top:-8px}
+  .spin{width:30px;height:30px;border:3px solid var(--salmon-soft);border-top-color:var(--salmon);border-radius:50%;animation:sp .8s linear infinite}
+  @keyframes sp{to{transform:rotate(360deg)}}
+  .tblwrap{overflow-x:auto;-webkit-overflow-scrolling:touch}
+  table.mtbl{width:100%;min-width:940px;border-collapse:collapse;font-size:13px;background:var(--card)}
+  table.mtbl th{background:#efe7d6;color:#6d5f4f;font-size:10.5px;font-weight:700;padding:8px 6px;text-align:left;position:sticky;top:0;white-space:nowrap;border-bottom:1px solid var(--line)}
+  table.mtbl td{padding:5px 6px;border-bottom:1px solid var(--line);vertical-align:middle}
+  table.mtbl tr.catrow td{background:#f6f0e2;font-weight:700;color:#6d5f4f;font-size:11.5px;letter-spacing:.06em}
+  table.mtbl tr:hover td{background:#fffaf0}
+  table.mtbl input,table.mtbl select{border:1px solid transparent;border-radius:7px;padding:6px 6px;font-family:inherit;font-size:13px;background:#fff;color:var(--ink);width:100%}
+  table.mtbl input:hover,table.mtbl select:hover{border-color:var(--line)}
+  table.mtbl input:focus,table.mtbl select:focus{outline:none;border-color:var(--salmon);box-shadow:0 0 0 3px var(--salmon-soft)}
+  table.mtbl input.num{text-align:right}
+  table.mtbl td.calc{text-align:right;font-weight:700;color:var(--ink);white-space:nowrap;font-variant-numeric:tabular-nums}
+  table.mtbl td.calc small{font-weight:500;color:var(--muted)}
+  .w-cat{width:104px}.w-name{min-width:190px}.w-price{width:92px}.w-amt{width:86px}
+  .w-unit{width:64px}.w-yield{width:74px}.w-vendor{width:120px}.w-note{min-width:110px}.w-del{width:34px}
+  .supbadge{display:inline-block;font-size:9.5px;background:var(--salmon-soft);color:var(--salmon-deep);border-radius:20px;padding:1px 6px;margin-left:4px;font-weight:700}
+  .findbar{display:flex;gap:8px;align-items:center;margin-bottom:12px;flex-wrap:wrap}
+  .findbar .sbox{flex:1;min-width:180px;position:relative}
+  .findbar .sbox input{width:100%;border:1px solid var(--line);border-radius:10px;padding:9px 32px 9px 32px;font-family:inherit;font-size:14px;background:#fff;color:var(--ink)}
+  .findbar .sbox input:focus{outline:none;border-color:var(--salmon);box-shadow:0 0 0 3px var(--salmon-soft)}
+  .findbar .sbox .ico{position:absolute;left:10px;top:50%;transform:translateY(-50%);color:var(--muted);font-size:13px;pointer-events:none}
+  .findbar .sbox .clr{position:absolute;right:6px;top:50%;transform:translateY(-50%);background:none;border:none;color:var(--muted);cursor:pointer;font-size:16px;padding:2px 6px;border-radius:6px}
+  .findbar .hit{font-size:11.5px;color:var(--muted);white-space:nowrap}
+  .card.fold .foldable{display:none}
+  .card-head-row{display:flex;align-items:center;gap:8px;padding:11px 14px;cursor:pointer;background:#faf6ec;border-bottom:1px solid var(--line)}
+  .card-head-row .cx{flex:0 0 auto;color:var(--muted);font-size:12px;width:14px;text-align:center;transition:transform .15s}
+  .card.fold .card-head-row .cx{transform:rotate(-90deg)}
+  .card-head-row .nm{flex:1;font-family:"Shippori Mincho B1",serif;font-weight:700;font-size:15px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+  .card-head-row .mini{font-size:12px;color:var(--muted);white-space:nowrap}
+  .card-head-row .mini b{font-size:13.5px}
+  .card-head-row .mini .rate-over{color:var(--over)}.card-head-row .mini .rate-good{color:var(--good)}
   .subtabs{display:flex;gap:6px;flex-wrap:wrap;margin-bottom:12px}
   .subtabs button{background:#fff;border:1px solid var(--line);border-radius:20px;padding:6px 14px;font-family:inherit;font-size:12.5px;font-weight:700;color:var(--muted);cursor:pointer}
   .subtabs button .n{font-weight:500;font-size:10.5px;opacity:.8;margin-left:3px}
@@ -172,22 +208,35 @@
   <section class="panel active" id="panel-ing">
     <div class="panel-head"><h2 class="mincho">材料の仕入れ</h2><span class="hint">仕入価格と量から単価を自動計算</span></div>
     <div id="ingBanner"></div>
-    <div class="subtabs" id="ingSub"></div>
-    <div class="card">
-      <div class="lbl-row"><span>材料名</span><span>数量</span><span>単位</span><span>単価(¥)</span><span></span></div>
-      <div id="ingList"></div>
-      <div class="add-row"><button class="btn btn-primary" style="flex:1" onclick="addIng()">＋ 材料を追加</button></div>
+    <div class="findbar">
+      <div class="sbox"><span class="ico">🔍</span><input id="ingSearch" placeholder="原料名・仕入先で検索" oninput="setIngQ(this.value)"><button class="clr" onclick="clearIngQ()">×</button></div>
+      <button class="btn btn-primary btn-sm" onclick="addIng()">＋ 新規登録</button>
+      <button class="btn btn-ghost btn-sm" onclick="doPrint()">🖨 印刷</button>
+      <span class="hit" id="ingHit"></span>
     </div>
+    <div class="subtabs" id="ingSub"></div>
+    <div class="card"><div class="tblwrap"><table class="mtbl" id="ingTable"></table></div></div>
+    <div id="ingList" style="display:none"></div>
   </section>
   <section class="panel" id="panel-prep">
     <div class="panel-head"><h2 class="mincho">仕込み</h2><span class="hint">材料と完成量から1単位あたりの単価を自動計算</span></div>
-    <div class="toolbar"><button class="btn btn-ghost btn-sm" onclick="doPrint()">🖨 一覧を印刷 / PDF</button></div>
+    <div class="findbar">
+      <div class="sbox"><span class="ico">🔍</span><input id="prepSearch" placeholder="仕込みを検索（例：肉みそ）" oninput="setPrepQ(this.value)"><button class="clr" onclick="clearPrepQ()" title="消す">×</button></div>
+      <button class="btn btn-ghost btn-sm" onclick="toggleAllPreps()" id="prepFoldBtn">すべて閉じる</button>
+      <button class="btn btn-ghost btn-sm" onclick="doPrint()">🖨 印刷</button>
+      <span class="hit" id="prepHit"></span>
+    </div>
     <div id="prepList"></div>
     <button class="btn btn-primary" style="width:100%" onclick="addPrep()">＋ 仕込みを追加</button>
   </section>
   <section class="panel" id="panel-menu">
     <div class="panel-head"><h2 class="mincho">メニューと原価</h2><span class="hint">材料を選んで一杯の原価を計算</span></div>
-    <div class="toolbar"><button class="btn btn-ghost btn-sm" onclick="doPrint()">🖨 一覧を印刷 / PDF</button></div>
+    <div class="findbar">
+      <div class="sbox"><span class="ico">🔍</span><input id="menuSearch" placeholder="メニュー・材料で検索（例：坦々麺 / 和牛）" oninput="setMenuQ(this.value)"><button class="clr" onclick="clearMenuQ()" title="消す">×</button></div>
+      <button class="btn btn-ghost btn-sm" onclick="toggleAllMenus()" id="menuFoldBtn">すべて閉じる</button>
+      <button class="btn btn-ghost btn-sm" onclick="doPrint()">🖨 印刷</button>
+      <span class="hit" id="menuHit"></span>
+    </div>
     <div id="menuList"></div>
     <button class="btn btn-primary" style="width:100%" onclick="addMenu()">＋ メニューを追加</button>
   </section>
@@ -202,6 +251,12 @@
     <div class="card"><div class="card-body"><div class="hist" id="histBody"></div></div></div>
   </section>
 </main>
+<div class="boot" id="bootScreen">
+  <img src="data:image/png;base64,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" alt="">
+  <div class="spin"></div>
+  <div class="msg" id="bootMsg">読み込み中…</div>
+  <div class="sub" id="bootSub">スプレッドシートからデータを取得しています</div>
+</div>
 <div id="printArea"></div>
 <div class="toast" id="toast"></div>
 <script>
@@ -256,10 +311,10 @@ let state={ingredients:[],preps:[],menus:[],target:30};
 let saveTimer=null;
 
 /* ---------- seed (原価表 現在仕入値) ---------- */
-const SEED_ING=[["肉みそ", "調理済み", 0.784905, 1, "g"], ["鶏ハム", "調理済み", 0.65154, 1, "g"], ["豚レアチャーシュー", "調理済み", 0.935716, 1, "g"], ["サーモン飯", "調理済み", 63.37177, 1, "人前"], ["オイスミコ", "調理済み", 2.766662, 1, "g"], ["ミックスサラダ", "調理済み", 0.734472, 1, "g"], ["ゴボウフライ", "調理済み", 0.669697, 1, "g"], ["サーモンタルタル", "調理済み", 1.23102, 1, "g"], ["ポルチーニオイル", "調理済み", 2.413662, 1, "g"], ["FC粉サーモンカエシ", "調理済み", 3.411609, 1, "g"], ["キノコオイル", "調理済み", 0.491175, 1, "g"], ["チキンスープ", "調理済み", 0.147059, 1, "g"], ["豆乳チキンスープ", "調理済み", 0.204657, 1, "g"], ["味玉", "調理済み", 32.0, 1, "個"], ["既製品ラー油", "調理済み", 1.407667, 1, "g"], ["黒マー油", "調理済み", 0.41928, 1, "g"], ["ポルチーニペースト", "調理済み", 1.094732, 1, "g"], ["バジルオイル", "調理済み", 2.341339, 1, "g"], ["揚げキノコ", "調理済み", 0.951647, 1, "g"], ["トリュフキノコペースト", "調理済み", 1.295719, 1, "g"], ["ローストビーフ", "調理済み", 3.034465, 1, "g"], ["温泉卵", "調理済み", 27.0, 1, "個"], ["イモフライ", "調理済み", 0.616835, 1, "g"], ["鮭パウダー", "PB", 20.0, 1, "g"], ["冷凍キノコ", "PB", 1.08, 1, "g"], ["鮭そぼろ", "その他", 0.85, 1, "g"], ["01コンソメ", "PB", 7.0, 1, "g"], ["太麺", "PB", 62.0, 1, "玉"], ["細麺", "PB", 61.0, 1, "玉"], ["ちぢれ麺", "PB", 57.0, 1, "玉"], ["手もみ風麺(煮干し)", "PB", 57.0, 1, "玉"], ["細麺(煮干し)", "PB", 57.0, 1, "玉"], ["つけ麺", "PB", 77.0, 1, "玉"], ["平打ち麺", "PB", 58.0, 1, "玉"], ["平縮れ麺", "PB", 0.61, 1, "玉"], ["タカキ　石窯バゲット", "一般食材", 1.258216, 1, "g"], ["李錦紀オイスターソース", "一般食材", 2.130526, 1, "g"], ["ティプロス　フィッシュソース（ナンプラー", "一般食材", 0.750345, 1, "g"], ["RFパルメザンパウダー", "一般食材", 2.32, 1, "g"], ["CSミックスＤシュレッド", "一般食材", 1.35, 1, "g"], ["サラダ油", "一般食材", 0.339394, 1, "g"], ["大倉フーズ白トリュフオイル", "一般食材", 6.244898, 1, "g"], ["オリーブオイル", "一般食材", 1.938776, 1, "g"], ["黒胡椒ホール", "一般食材", 3.56, 1, "g"], ["カエンペッパー", "一般食材", 4.576531, 1, "g"], ["パプリカパウダー", "一般食材", 2.770975, 1, "g"], ["テーオーおろしニンニク", "一般食材", 0.857143, 1, "g"], ["テーオーおろし生姜", "一般食材", 0.887755, 1, "g"], ["一味唐辛子", "一般食材", 1.8, 1, "g"], ["糸唐辛子", "一般食材", 17.3, 1, "g"], ["三明　朝天ラージャオメン", "一般食材", 3.772, 1, "g"], ["大倉乾燥ポルチーニ", "一般食材", 20.05, 1, "g"], ["EBガラムマサラ", "一般食材", 3.875, 1, "g"], ["ねりごま", "一般食材", 1.515, 1, "g"], ["DSプレーンバジルペースト", "一般食材", 2.743902, 1, "g"], ["QPオイルソースガーリック&赤唐辛子", "一般食材", 1.04, 1, "g"], ["ユニ冷凍ほうれん草", "一般食材", 0.416842, 1, "g"], ["ヤマキだしご飯ベース", "一般食材", 0.860556, 1, "g"], ["白だし", "一般食材", 0.701111, 1, "g"], ["濃口醤油", "一般食材", 0.302222, 1, "g"], ["ヒガシマル牡蠣だし醤油", "一般食材", 0.85, 1, "g"], ["酢", "一般食材", 0.201111, 1, "g"], ["うま味調味料", "一般食材", 0.522, 1, "g"], ["伯方の塩", "一般食材", 0.563, 1, "g"], ["グラニュー糖", "一般食材", 0.351, 1, "g"], ["YOUKI四川山椒油", "一般食材", 2.98913, 1, "g"], ["三共食べるラー油", "一般食材", 1.988, 1, "g"], ["いし本ラー油", "一般食材", 1.1175, 1, "g"], ["辛子明太子チューブ", "一般食材", 3.66, 1, "g"], ["ギャバンランプフィッシュキャビア", "一般食材", 13.0, 1, "g"], ["フライドオニオン", "一般食材", 5.52, 1, "g"], ["マヨネーズ", "一般食材", 0.692632, 1, "g"], ["クリーンパックM", "一般食材", 27.0, 1, "個"], ["フライドガーリック", "一般食材", 2.017, 1, "g"], ["バルサミコ", "一般食材", 4.77551, 1, "g"], ["有塩バター", "一般食材", 1.89, 1, "g"], ["フレッシュトリュフ", "一般食材", 43.888889, 1, "g"], ["卸しわさび", "一般食材", 1.19, 1, "g"], ["ハインツ ローストビーフソースホース", "一般食材", 1.24, 1, "g"], ["牛モモ肉", "一般食材", 3.111111, 1, "g"], ["鶏胸肉", "一般食材", 0.65, 1, "g"], ["豚肩ロース", "一般食材", 0.95, 1, "g"], ["豚挽肉", "一般食材", 0.65, 1, "g"], ["ごぼう", "一般食材", 1.0, 1, "g"], ["赤玉ねぎ", "一般食材", 1.437198, 1, "g"], ["ジャガイモ", "一般食材", 0.85, 1, "g"], ["ミズナ", "一般食材", 0.676471, 1, "g"], ["スライスレモン", "一般食材", 8.166667, 1, "枚"], ["ニンジン", "一般食材", 0.611765, 1, "g"], ["エリンギ", "一般食材", 1.4, 1, "g"], ["しいたけ", "一般食材", 1.167, 1, "g"], ["しめじ", "一般食材", 0.89, 1, "g"], ["舞茸", "一般食材", 1.48, 1, "g"], ["エノキダケ", "一般食材", 0.988235, 1, "g"], ["春キャベツ", "一般食材", 0.0, 1, "g"], ["ミニトマト", "一般食材", 1.94, 1, "g"], ["蓮根ホール水煮", "一般食材", 0.78, 1, "g"], ["インゲン", "一般食材", 8.8, 1, "g"], ["伏見唐辛子", "一般食材", 8.8, 1, "g"], ["ヤングコーン", "一般食材", 3.116883, 1, "g"], ["無洗米", "一般食材", 0.55556, 1, "g"], ["トウニュウ", "一般食材", 0.245, 1, "g"], ["メイプルサーモン", "一般食材", 2.384, 1, "g"], ["水", "一般食材", 0.01, 1, "g"], ["うに", "その他", 9.5, 1, "g"], ["和牛モモ", "一般食材", 5.428571, 1, "g"], ["クルトン No.8", "一般食材", 2.75, 1, "g"], ["冷凍チャーシュー", "一般食材", 2.08, 1, "g"], ["ＭＦＰホット麺１６（５７）　白", "容器", 24.0, 1, "個"]];
+const SEED_ING=[["肉みそ", "調理済み", "g", 1.0, "", [["", 0.7849, 1.0, ""]]], ["鶏ハム", "調理済み", "g", 1.0, "", [["", 0.6515, 1.0, ""]]], ["豚レアチャーシュー", "調理済み", "g", 1.0, "", [["", 0.9357, 1.0, ""]]], ["サーモン飯", "調理済み", "人前", 1.0, "", [["", 63.3718, 1.0, ""]]], ["オイスミコ", "調理済み", "g", 1.0, "", [["", 2.7667, 1.0, ""]]], ["ミックスサラダ", "調理済み", "g", 1.0, "", [["", 0.7345, 1.0, ""]]], ["ゴボウフライ", "調理済み", "g", 1.0, "", [["", 0.6697, 1.0, ""]]], ["サーモンタルタル", "調理済み", "g", 1.0, "", [["", 1.231, 1.0, ""]]], ["ポルチーニオイル", "調理済み", "g", 1.0, "", [["", 2.4137, 1.0, ""]]], ["FC粉サーモンカエシ", "調理済み", "g", 1.0, "", [["", 3.4116, 1.0, ""]]], ["キノコオイル", "調理済み", "g", 1.0, "", [["", 0.4912, 1.0, ""]]], ["チキンスープ", "調理済み", "g", 1.0, "", [["", 0.1471, 1.0, ""]]], ["豆乳チキンスープ", "調理済み", "g", 1.0, "", [["", 0.2047, 1.0, ""]]], ["味玉", "調理済み", "個", 1.0, "", [["", 32.0, 1.0, ""]]], ["既製品ラー油", "調理済み", "g", 1.0, "", [["", 1.4077, 1.0, ""]]], ["黒マー油", "調理済み", "g", 1.0, "", [["", 0.4193, 1.0, ""]]], ["ポルチーニペースト", "調理済み", "g", 1.0, "", [["", 1.0947, 1.0, ""]]], ["バジルオイル", "調理済み", "g", 1.0, "", [["", 2.3413, 1.0, ""]]], ["ポルチーニペースト", "調理済み", "g", 1.0, "", [["", 1.0947, 1.0, ""]]], ["揚げキノコ", "調理済み", "g", 1.0, "", [["", 0.9516, 1.0, ""]]], ["トリュフキノコペースト", "調理済み", "g", 1.0, "", [["", 1.2957, 1.0, ""]]], ["ローストビーフ", "調理済み", "g", 1.0, "", [["", 3.0345, 1.0, ""]]], ["温泉卵", "調理済み", "個", 1.0, "", [["", 27.0, 1.0, ""]]], ["イモフライ", "調理済み", "g", 1.0, "", [["", 0.6168, 1.0, ""]]], ["鮭パウダー", "PB", "g", 1.0, "", [["若葉食品", 21.0, 1.0, "990*10"]]], ["冷凍キノコ", "PB", "g", 1.0, "", [["グッドミール", 1.08, 1.0, "1kg*10pc/送料込"]]], ["鮭そぼろ", "その他", "g", 1.0, "", [["若葉食品", 0.85, 1.0, "8kg"]]], ["01コンソメ", "PB", "g", 1.0, "", [["若葉食品", 7.0, 1.0, "1kg*12"]]], ["太麺", "PB", "玉", 1.0, "", [["大橋製麺", 62.0, 1.0, ""]]], ["細麺", "PB", "玉", 1.0, "", [["大橋製麺", 61.0, 1.0, ""]]], ["ちぢれ麺", "PB", "玉", 1.0, "", [["大橋製麺", 57.0, 1.0, ""]]], ["手もみ風麺(煮干し)", "PB", "玉", 1.0, "", [["大橋製麺", 57.0, 1.0, ""]]], ["細麺(煮干し)", "PB", "玉", 1.0, "", [["大橋製麺", 57.0, 1.0, ""]]], ["つけ麺", "PB", "玉", 1.0, "", [["大橋製麺", 77.0, 1.0, ""]]], ["平打ち麺", "PB", "玉", 1.0, "", [["大橋製麺", 58.0, 1.0, ""]]], ["平縮れ麺", "PB", "玉", 1.0, "", [["大橋製麺", 61.0, 1.0, ""]]], ["タカキ　石窯バゲット", "一般食材", "g", 1.0, "", [["トーホー", 268.0, 213.0, "213g/1本"]]], ["李錦紀オイスターソース", "一般食材", "g", 0.95, "", [["トーホー", 1518.0, 750.0, "750g"]]], ["ティプロス　フィッシュソース（ナンプラー", "一般食材", "g", 1.0, "", [["トーホー", 544.0, 725.0, "725ml"]]], ["RFパルメザンパウダー", "一般食材", "g", 1.0, "", [["トーホー", 2320.0, 1000.0, "1k"]]], ["CSミックスＤシュレッド", "一般食材", "g", 1.0, "", [["トーホー", 1350.0, 1000.0, "1k"]]], ["サラダ油", "一般食材", "g", 1.0, "", [["トーホー", 5600.0, 16500.0, "16.5k"]]], ["大倉フーズ白トリュフオイル", "一般食材", "g", 0.98, "", [["トーホー", 1530.0, 250.0, "250ml"]]], ["オリーブオイル", "一般食材", "g", 0.98, "相場品", [["トーホー", 1900.0, 1000.0, "1l"]]], ["黒胡椒ホール", "一般食材", "g", 1.0, "", [["トーホー", 356.0, 100.0, "100g"]]], ["カエンペッパー", "一般食材", "g", 0.98, "", [["トーホー", 897.0, 200.0, "200g"]]], ["パプリカパウダー", "一般食材", "g", 0.98, "", [["トーホー", 611.0, 225.0, "225g"]]], ["テーオーおろしニンニク", "一般食材", "g", 0.98, "", [["トーホー", 840.0, 1000.0, "1k"]]], ["テーオーおろし生姜", "一般食材", "g", 0.98, "", [["トーホー", 870.0, 1000.0, "1k"]]], ["一味唐辛子", "一般食材", "g", 1.0, "", [["トーホー", 540.0, 300.0, "300g"]]], ["糸唐辛子", "一般食材", "g", 1.0, "", [["トーホー", 1730.0, 100.0, "100g"]]], ["三明　朝天ラージャオメン", "一般食材", "g", 1.0, "", [["トーホー", 1886.0, 500.0, "500g"]]], ["大倉乾燥ポルチーニ", "一般食材", "g", 1.0, "", [["トーホー", 2005.0, 100.0, "100g"]]], ["EBガラムマサラ", "一般食材", "g", 1.0, "", [["トーホー", 775.0, 200.0, "200g"]]], ["ねりごま", "一般食材", "g", 1.0, "", [["トーホー", 1515.0, 1000.0, "1k"]]], ["DSプレーンバジルペースト", "一般食材", "g", 1.0, "在庫なし", [["トーホー", 2250.0, 820.0, "820g"]]], ["QPオイルソースガーリック&赤唐辛子", "一般食材", "g", 1.0, "", [["トーホー", 1040.0, 1000.0, "1l"]]], ["ユニ冷凍ほうれん草", "一般食材", "g", 0.95, "", [["トーホー", 198.0, 500.0, "500g"]]], ["ヤマキだしご飯ベース", "一般食材", "g", 1.0, "", [["トーホー", 1549.0, 1800.0, "1.8l"]]], ["白だし", "一般食材", "g", 1.0, "", [["トーホー", 1262.0, 1800.0, "1.8l"]]], ["濃口醤油", "一般食材", "g", 1.0, "", [["トーホー", 544.0, 1800.0, "1.8l"]]], ["ヒガシマル牡蠣だし醤油", "一般食材", "g", 1.0, "", [["トーホー", 340.0, 400.0, "400ml"]]], ["酢", "一般食材", "g", 1.0, "", [["トーホー", 362.0, 1800.0, "1.8l"]]], ["うま味調味料", "一般食材", "g", 1.0, "", [["トーホー", 522.0, 1000.0, "1k"]]], ["伯方の塩", "一般食材", "g", 1.0, "", [["トーホー", 563.0, 1000.0, "1k"]]], ["グラニュー糖", "一般食材", "g", 1.0, "相場品", [["トーホー", 351.0, 1000.0, "1k"]]], ["YOUKI四川山椒油", "一般食材", "g", 1.0, "", [["トーホー", 2750.0, 920.0, "920g"]]], ["三共食べるラー油", "一般食材", "g", 1.0, "代替品", [["トーホー", 994.0, 500.0, "500g"]]], ["いし本ラー油", "一般食材", "g", 1.0, "在庫なし", [["トーホー", 2235.0, 2000.0, "2l"]]], ["辛子明太子チューブ", "一般食材", "g", 1.0, "", [["トーホー", 1098.0, 300.0, "300g"]]], ["ギャバンランプフィッシュキャビア", "一般食材", "g", 1.0, "", [["トーホー", 650.0, 50.0, "50g"]]], ["フライドオニオン", "一般食材", "g", 1.0, "", [["トーホー", 1104.0, 200.0, "200g"]]], ["マヨネーズ", "一般食材", "g", 0.95, "", [["トーホー", 658.0, 1000.0, "1k"]]], ["クリーンパックM", "一般食材", "個", 1.0, "相場品", [["トーホー", 27.0, 1.0, "1個"]]], ["フライドガーリック", "一般食材", "g", 1.0, "", [["トーホー", 2017.0, 1000.0, "1k"]]], ["バルサミコ", "一般食材", "g", 0.98, "", [["トーホー", 1170.0, 250.0, "250ml"]]], ["有塩バター", "一般食材", "g", 1.0, "", [["", 1.89, 1.0, "450g"]]], ["フレッシュトリュフ", "一般食材", "g", 0.9, "", [["", 39.5, 1.0, ""]]], ["卸しわさび", "一般食材", "g", 1.0, "", [["", 1.19, 1.0, "500g"]]], ["ハインツ ローストビーフソースホース", "一般食材", "g", 1.0, "", [["", 1.24, 1.0, "585g"]]], ["牛モモ肉", "一般食材", "g", 0.9, "", [["肉屋", 2800.0, 1000.0, "kg"]]], ["鶏胸肉", "一般食材", "g", 1.0, "", [["肉屋", 650.0, 1000.0, "kg"]]], ["豚肩ロース", "一般食材", "g", 1.0, "", [["肉屋", 950.0, 1000.0, "Kg"]]], ["豚挽肉", "一般食材", "g", 1.0, "", [["肉屋", 650.0, 1000.0, "kg"]]], ["ごぼう", "一般食材", "g", 1.0, "", [["フレッシュ", 120.0, 120.0, "2本/1袋"]]], ["赤玉ねぎ", "一般食材", "g", 0.9, "", [["フレッシュ", 238.0, 184.0, "184g/個"]]], ["ジャガイモ", "一般食材", "g", 0.9, "", [["フレッシュ", 680.0, 1000.0, "Kg"]]], ["ミズナ", "一般食材", "g", 0.85, "", [["フレッシュ", 115.0, 200.0, "200g"]]], ["スライスレモン", "一般食材", "枚", 1.0, "", [["フレッシュ", 98.0, 12.0, "1個"]]], ["ニンジン", "一般食材", "g", 0.85, "", [["フレッシュ", 78.0, 150.0, "150g/1本"]]], ["エリンギ", "一般食材", "g", 1.0, "", [["フレッシュ", 280.0, 200.0, "200g"]]], ["しいたけ", "一般食材", "g", 1.0, "", [["フレッシュ", 1167.0, 1000.0, "1kg"]]], ["しめじ", "一般食材", "g", 1.0, "", [["フレッシュ", 178.0, 200.0, "200g"]]], ["舞茸", "一般食材", "g", 1.0, "", [["フレッシュ", 148.0, 100.0, "100g"]]], ["エノキダケ", "一般食材", "g", 0.85, "", [["フレッシュ", 168.0, 200.0, "200g/1パック"]]], ["春キャベツ", "一般食材", "g", 1.0, "", [["フレッシュ", 0.0, 1.0, ""]]], ["ジャガイモ", "一般食材", "g", 0.8, "", [["フレッシュ", 680.0, 1000.0, "1k"]]], ["ミニトマト", "一般食材", "g", 1.0, "", [["フレッシュ", 388.0, 200.0, "200g/1パック"]]], ["蓮根ホール水煮", "一般食材", "g", 1.0, "", [["フレッシュ", 780.0, 1000.0, "1k/1パック"]]], ["インゲン", "一般食材", "g", 1.0, "", [["フレッシュ", 8800.0, 1000.0, "kg"]]], ["伏見唐辛子", "一般食材", "g", 1.0, "", [["フレッシュ", 8800.0, 1000.0, "kg"]]], ["ヤングコーン", "一般食材", "g", 1.0, "", [["フレッシュ", 240.0, 77.0, "77g/1パック"]]], ["無洗米", "一般食材", "g", 1.0, "", [["米屋", 13889.0, 25000.0, "25kg"]]], ["無洗米", "一般食材", "g", 1.0, "", [["米屋", 13889.0, 25000.0, "1000g"]]], ["トウニュウ", "一般食材", "g", 1.0, "", [["酒屋", 245.0, 1000.0, "1000ml/1本"]]], ["メイプルサーモン", "一般食材", "g", 1.0, "", [["魚屋", 2384.0, 1000.0, "kg"]]], ["水", "一般食材", "g", 1.0, "", [["", 0.01, 1.0, ""]]], ["うに", "その他", "g", 1.0, "", [["", 9.5, 1.0, ""]]], ["和牛モモ", "一般食材", "g", 0.7, "", [["肉屋", 3800.0, 1000.0, "kg"]]], ["クルトン No.8", "一般食材", "g", 1.0, "", [["amazon", 2.75, 1.0, "300g/1袋"]]], ["冷凍チャーシュー", "一般食材", "g", 1.0, "", [["SSフーズ", 2.08, 1.0, "20㎏/10本"]]], ["ＭＦＰホット麺１６（５７）　白", "容器", "個", 1.0, "", [["パックマーケット", 24.0, 1.0, "50/1袋"]]]];
 const SEED_PREP=[["肉みそ", 1325.0, "g", [["豚挽肉", 1000.0], ["濃口醤油", 75.0], ["李錦紀オイスターソース", 150.0], ["テーオーおろしニンニク", 25.0], ["グラニュー糖", 75.0]]], ["鶏ハム", 2090.0, "g", [["鶏胸肉", 2000.0], ["白だし", 80.0], ["伯方の塩", 10.0]]], ["豚レアチャーシュー", 2110.0, "g", [["豚肩ロース", 2000.0], ["伯方の塩", 20.0], ["白だし", 90.0]]], ["サーモン飯", 1780.0, "g", [["メイプルサーモン", 100.0], ["水", 850.0], ["FC粉サーモンカエシ", 30.0], ["キノコオイル", 50.0], ["ヤマキだしご飯ベース", 50.0], ["無洗米", 700.0]]], ["オイスミコ", 1580.0, "g", [["李錦紀オイスターソース", 1200.0], ["バルサミコ", 380.0]]], ["ミックスサラダ", 240.0, "g", [["ミズナ", 200.0], ["ニンジン", 20.0], ["赤玉ねぎ", 20.0]]], ["ゴボウフライ", 800.0, "g", [["ごぼう", 400.0], ["サラダ油", 400.0]]], ["サーモンタルタル", 640.0, "g", [["メイプルサーモン", 200.0], ["マヨネーズ", 400.0], ["ヒガシマル牡蠣だし醤油", 40.0]]], ["ポルチーニオイル", 1200.0, "g", [["大倉乾燥ポルチーニ", 100.0], ["フライドオニオン", 100.0], ["サラダ油", 1000.0]]], ["FC粉サーモンカエシ", 5990.0, "g", [["鮭パウダー", 990.0], ["水", 4000.0], ["伯方の塩", 400.0], ["ティプロス　フィッシュソース（ナンプラー", 400.0], ["グラニュー糖", 200.0]]], ["キノコオイル", 5050.0, "g", [["冷凍キノコ", 1000.0], ["サラダ油", 4000.0], ["テーオーおろしニンニク", 50.0]]], ["チキンスープ", 1020.0, "g", [["水", 1000.0], ["01コンソメ", 20.0]]], ["豆乳チキンスープ", 16320.0, "g", [["水", 12000.0], ["トウニュウ", 4000.0], ["01コンソメ", 320.0]]], ["味玉", 365.0, "g", [["クリーンパックM", 15.0], ["ヒガシマル牡蠣だし醤油", 100.0], ["ヤマキだしご飯ベース", 50.0], ["水", 200.0]]], ["既製品ラー油", 1500.0, "g", [["三共食べるラー油", 500.0], ["いし本ラー油", 1000.0]]], ["黒マー油", 4200.0, "g", [["サラダ油", 4000.0], ["フライドガーリック", 200.0]]], ["ポルチーニペースト", 524.0, "g", [["大倉乾燥ポルチーニ", 10.0], ["水", 100.0], ["伯方の塩", 4.0], ["しめじ", 200.0], ["舞茸", 100.0], ["トウニュウ", 100.0], ["オリーブオイル", 10.0]]], ["バジルオイル", 400.0, "g", [["DSプレーンバジルペースト", 200.0], ["オリーブオイル", 200.0]]], ["揚げキノコ", 40.0, "g", [["エリンギ", 8.0], ["舞茸", 8.0], ["しめじ", 8.0], ["エノキダケ", 8.0]]], ["トリュフキノコペースト", 558.0, "g", [["大倉フーズ白トリュフオイル", 40.0], ["伯方の塩", 8.0], ["しめじ", 200.0], ["舞茸", 100.0], ["トウニュウ", 100.0], ["オリーブオイル", 10.0], ["エノキダケ", 100.0]]], ["ローストビーフ", 413.0, "g", [["牛モモ肉", 400.0], ["伯方の塩", 8.0], ["テーオーおろしニンニク", 5.0]]], ["イモフライ", 30.0, "g", [["ジャガイモ", 20.0], ["サラダ油", 10.0]]]];
 const SEED_MENU=[["スタンダード", 1000, 1.1, [["平打ち麺", 1.0], ["豆乳チキンスープ", 200.0], ["FC粉サーモンカエシ", 30.0], ["キノコオイル", 50.0], ["豚レアチャーシュー", 25.0], ["黒マー油", 8.0], ["ごぼう", 16.0], ["パプリカパウダー", 0.1], ["オイスミコ", 5.0], ["ギャバンランプフィッシュキャビア", 0.2], ["ミックスサラダ", 10.0], ["タカキ　石窯バゲット", 12.0], ["メイプルサーモン", 15.0]]], ["赤", 950, 1.1, [["ちぢれ麺", 1.0], ["豆乳チキンスープ", 200.0], ["FC粉サーモンカエシ", 30.0], ["キノコオイル", 50.0], ["一味唐辛子", 2.0], ["豚レアチャーシュー", 25.0], ["既製品ラー油", 10.0], ["黒マー油", 8.0], ["ごぼう", 16.0], ["パプリカパウダー", 0.1], ["オイスミコ", 5.0], ["ギャバンランプフィッシュキャビア", 0.2], ["ミックスサラダ", 10.0], ["三明　朝天ラージャオメン", 3.0], ["メイプルサーモン", 15.0]]], ["バジル", 1000, 1.1, [["平打ち麺", 1.0], ["豆乳チキンスープ", 200.0], ["FC粉サーモンカエシ", 30.0], ["キノコオイル", 15.0], ["DSプレーンバジルペースト", 15.0], ["豚レアチャーシュー", 25.0], ["バジルオイル", 8.0], ["ごぼう", 16.0], ["パプリカパウダー", 0.1], ["ギャバンランプフィッシュキャビア", 0.2], ["ミックスサラダ", 10.0], ["タカキ　石窯バゲット", 12.0], ["メイプルサーモン", 15.0], ["RFパルメザンパウダー", 8.0]]], ["坦々麺", 1100, 1.1, [["ちぢれ麺", 1.0], ["豆乳チキンスープ", 200.0], ["FC粉サーモンカエシ", 30.0], ["キノコオイル", 50.0], ["ねりごま", 15.0], ["豚レアチャーシュー", 25.0], ["一味唐辛子", 3.0], ["既製品ラー油", 10.0], ["黒マー油", 10.0], ["ごぼう", 16.0], ["パプリカパウダー", 0.1], ["オイスミコ", 5.0], ["ギャバンランプフィッシュキャビア", 0.2], ["ミックスサラダ", 15.0], ["肉みそ", 20.0], ["三明　朝天ラージャオメン", 3.0], ["メイプルサーモン", 10.0], ["YOUKI四川山椒油", 5.0]]], ["汁なし", 1150, 1.1, [["平打ち麺", 1.0], ["豆乳チキンスープ", 30.0], ["FC粉サーモンカエシ", 30.0], ["キノコオイル", 50.0], ["豆乳チキンスープ", 30.0], ["豚レアチャーシュー", 25.0], ["サーモンタルタル", 20.0], ["黒マー油", 8.0], ["ごぼう", 16.0], ["パプリカパウダー", 0.1], ["オイスミコ", 5.0], ["ギャバンランプフィッシュキャビア", 0.2], ["ミックスサラダ", 10.0], ["タカキ　石窯バゲット", 12.0], ["温泉卵", 1.0], ["メイプルサーモン", 15.0]]], ["サーモン飯", 250, 1.1, [["サーモン飯", 1.0], ["メイプルサーモン", 10.0]]], ["スタンダードセット", 1180, 1.1, [["平打ち麺", 1.0], ["豆乳チキンスープ", 200.0], ["FC粉サーモンカエシ", 30.0], ["キノコオイル", 50.0], ["豚レアチャーシュー", 25.0], ["黒マー油", 8.0], ["ごぼう", 16.0], ["パプリカパウダー", 0.1], ["オイスミコ", 5.0], ["ギャバンランプフィッシュキャビア", 0.2], ["ミックスサラダ", 10.0], ["タカキ　石窯バゲット", 12.0], ["メイプルサーモン", 15.0], ["サーモン飯", 1.0], ["メイプルサーモン", 10.0]]], ["赤セット", 1200, 1.1, [["平打ち麺", 1.0], ["豆乳チキンスープ", 200.0], ["FC粉サーモンカエシ", 30.0], ["キノコオイル", 50.0], ["一味唐辛子", 3.0], ["豚レアチャーシュー", 25.0], ["既製品ラー油", 10.0], ["黒マー油", 8.0], ["ごぼう", 16.0], ["パプリカパウダー", 0.1], ["オイスミコ", 5.0], ["ギャバンランプフィッシュキャビア", 0.2], ["ミックスサラダ", 10.0], ["三明　朝天ラージャオメン", 3.0], ["メイプルサーモン", 15.0], ["サーモン飯", 1.0], ["メイプルサーモン", 10.0]]], ["バジルセット", 1250, 1.1, [["平打ち麺", 1.0], ["豆乳チキンスープ", 200.0], ["FC粉サーモンカエシ", 30.0], ["キノコオイル", 50.0], ["豚レアチャーシュー", 25.0], ["バジルオイル", 5.0], ["バジルオイル", 8.0], ["ごぼう", 16.0], ["パプリカパウダー", 0.1], ["ギャバンランプフィッシュキャビア", 0.2], ["ミックスサラダ", 10.0], ["タカキ　石窯バゲット", 12.0], ["メイプルサーモン", 15.0], ["RFパルメザンパウダー", 8.0], ["サーモン飯", 1.0], ["メイプルサーモン", 10.0]]], ["坦々麺セット", 1350, 1.1, [["ちぢれ麺", 1.0], ["豆乳チキンスープ", 200.0], ["FC粉サーモンカエシ", 30.0], ["キノコオイル", 50.0], ["ねりごま", 15.0], ["豚レアチャーシュー", 25.0], ["一味唐辛子", 3.0], ["既製品ラー油", 10.0], ["黒マー油", 10.0], ["ごぼう", 16.0], ["パプリカパウダー", 0.1], ["オイスミコ", 5.0], ["ギャバンランプフィッシュキャビア", 0.2], ["ミックスサラダ", 15.0], ["肉みそ", 20.0], ["三明　朝天ラージャオメン", 3.0], ["メイプルサーモン", 15.0], ["サーモン飯", 1.0], ["メイプルサーモン", 10.0]]], ["汁なしセット", 1300, 1.1, [["平打ち麺", 1.0], ["豆乳チキンスープ", 30.0], ["FC粉サーモンカエシ", 30.0], ["キノコオイル", 50.0], ["豆乳チキンスープ", 30.0], ["豚レアチャーシュー", 25.0], ["サーモンタルタル", 20.0], ["黒マー油", 8.0], ["ごぼう", 16.0], ["パプリカパウダー", 0.1], ["オイスミコ", 5.0], ["ギャバンランプフィッシュキャビア", 0.2], ["ミックスサラダ", 10.0], ["タカキ　石窯バゲット", 12.0], ["温泉卵", 1.0], ["メイプルサーモン", 15.0], ["チキンスープ", 120.0], ["サーモン飯", 1.0], ["メイプルサーモン", 10.0]]], ["ポルチーニ", 1300, 1.1, [["平打ち麺", 1.0], ["豆乳チキンスープ", 200.0], ["FC粉サーモンカエシ", 30.0], ["キノコオイル", 50.0], ["豚レアチャーシュー", 25.0], ["ポルチーニペースト", 20.0], ["ポルチーニオイル", 10.0], ["ごぼう", 16.0], ["パプリカパウダー", 0.1], ["オイスミコ", 5.0], ["ギャバンランプフィッシュキャビア", 0.2], ["ミックスサラダ", 10.0], ["タカキ　石窯バゲット", 12.0], ["メイプルサーモン", 15.0], ["揚げキノコ", 30.0]]], ["炙りチャーシュー丼", 700, 1.0, [["サーモン飯", 1.5], ["豚レアチャーシュー", 50.0], ["ミックスサラダ", 3.0]]], ["単品サーモン飯", 500, 1.0, [["サーモン飯", 1.5], ["サーモンタルタル", 20.0], ["メイプルサーモン", 10.0]]], ["限定丼", 700, 1.0, [["サーモン飯", 1.4], ["サーモンタルタル", 20.0], ["メイプルサーモン", 10.0], ["ミックスサラダ", 3.0], ["ゴボウフライ", 1.6]]], ["ミニチャー丼セット", 300, 1.0, [["サーモン飯", 1.0], ["豚レアチャーシュー", 30.0]]], ["和牛　スタンダード", 3000, 1.08, [["平打ち麺", 1.0], ["豆乳チキンスープ", 200.0], ["FC粉サーモンカエシ", 30.0], ["キノコオイル", 50.0], ["黒マー油", 4.0], ["パプリカパウダー", 0.1], ["オイスミコ", 5.0], ["ギャバンランプフィッシュキャビア", 0.2], ["ミックスサラダ", 10.0], ["タカキ　石窯バゲット", 12.0], ["メイプルサーモン", 15.0], ["和牛モモ", 80.0], ["卸しわさび", 5.0], ["トリュフキノコペースト", 5.0]]], ["和牛　赤", 3100, 1.1, [["平打ち麺", 1.0], ["豆乳チキンスープ", 200.0], ["FC粉サーモンカエシ", 30.0], ["キノコオイル", 50.0], ["一味唐辛子", 2.0], ["既製品ラー油", 8.0], ["黒マー油", 4.0], ["パプリカパウダー", 0.1], ["オイスミコ", 5.0], ["ギャバンランプフィッシュキャビア", 0.2], ["ミックスサラダ", 20.0], ["タカキ　石窯バゲット", 8.0], ["メイプルサーモン", 15.0], ["和牛モモ", 80.0], ["トリュフキノコペースト", 5.0], ["卸しわさび", 5.0]]], ["和牛　バジル", 3200, 1.1, [["平打ち麺", 1.0], ["豆乳チキンスープ", 200.0], ["FC粉サーモンカエシ", 30.0], ["キノコオイル", 15.0], ["DSプレーンバジルペースト", 15.0], ["バジルオイル", 8.0], ["パプリカパウダー", 0.1], ["オイスミコ", 5.0], ["ギャバンランプフィッシュキャビア", 0.2], ["ミックスサラダ", 20.0], ["タカキ　石窯バゲット", 8.0], ["メイプルサーモン", 15.0], ["和牛モモ", 80.0], ["トリュフキノコペースト", 5.0], ["卸しわさび", 5.0]]], ["和牛　担々麺", 3250, 1.1, [["平打ち麺", 1.0], ["豆乳チキンスープ", 170.0], ["FC粉サーモンカエシ", 30.0], ["キノコオイル", 33.0], ["ねりごま", 7.0], ["一味唐辛子", 3.0], ["既製品ラー油", 10.0], ["黒マー油", 4.0], ["パプリカパウダー", 0.1], ["オイスミコ", 5.0], ["ギャバンランプフィッシュキャビア", 0.2], ["ミックスサラダ", 20.0], ["タカキ　石窯バゲット", 8.0], ["肉みそ", 20.0], ["メイプルサーモン", 15.0], ["和牛モモ", 80.0], ["トリュフキノコペースト", 5.0], ["卸しわさび", 5.0]]], ["和牛チャーシュー丼", 1200, 1.0, [["サーモン飯", 1.4], ["和牛モモ", 60.0], ["ミックスサラダ", 3.0], ["ゴボウフライ", 1.6], ["ハインツ ローストビーフソースホース", 0.0], ["オイスミコ", 2.0], ["CSミックスＤシュレッド", 0.0]]], ["スタンダード（テイクアウト）", 500, 1.1, [["平打ち麺", 0.5], ["豆乳チキンスープ", 100.0], ["FC粉サーモンカエシ", 15.0], ["キノコオイル", 25.0], ["黒マー油", 4.0], ["ごぼう", 8.0], ["ミックスサラダ", 5.0], ["メイプルサーモン", 7.5]]], ["スタンダード（930円）", 930, 1.1, [["平打ち麺", 1.0], ["豆乳チキンスープ", 200.0], ["FC粉サーモンカエシ", 30.0], ["キノコオイル", 50.0], ["豚レアチャーシュー", 25.0], ["黒マー油", 8.0], ["ごぼう", 16.0], ["パプリカパウダー", 0.1], ["オイスミコ", 5.0], ["ギャバンランプフィッシュキャビア", 0.2], ["ミックスサラダ", 10.0], ["タカキ　石窯バゲット", 12.0], ["メイプルサーモン", 15.0]]], ["汁なし（1050円）", 1050, 1.1, [["平打ち麺", 1.0], ["豆乳チキンスープ", 50.0], ["FC粉サーモンカエシ", 25.0], ["キノコオイル", 50.0], ["豚レアチャーシュー", 25.0], ["黒マー油", 8.0], ["ごぼう", 16.0], ["パプリカパウダー", 0.1], ["オイスミコ", 5.0], ["ギャバンランプフィッシュキャビア", 0.2], ["ミックスサラダ", 10.0], ["タカキ　石窯バゲット", 12.0], ["温泉卵", 1.0], ["メイプルサーモン", 15.0], ["サーモンタルタル", 20.0]]], ["汁なし　赤", 950, 1.1, [["ちぢれ麺", 1.0], ["豆乳チキンスープ", 50.0], ["FC粉サーモンカエシ", 25.0], ["キノコオイル", 50.0], ["一味唐辛子", 2.0], ["豚レアチャーシュー", 25.0], ["既製品ラー油", 10.0], ["黒マー油", 8.0], ["ごぼう", 16.0], ["パプリカパウダー", 0.1], ["オイスミコ", 5.0], ["ギャバンランプフィッシュキャビア", 0.2], ["ミックスサラダ", 10.0], ["三明　朝天ラージャオメン", 3.0], ["メイプルサーモン", 15.0]]], ["汁なし　バジル", 1000, 1.1, [["平打ち麺", 1.0], ["豆乳チキンスープ", 50.0], ["FC粉サーモンカエシ", 25.0], ["キノコオイル", 15.0], ["DSプレーンバジルペースト", 15.0], ["豚レアチャーシュー", 25.0], ["バジルオイル", 10.0], ["ごぼう", 16.0], ["パプリカパウダー", 0.1], ["ギャバンランプフィッシュキャビア", 0.2], ["ミックスサラダ", 10.0], ["タカキ　石窯バゲット", 12.0], ["メイプルサーモン", 15.0], ["RFパルメザンパウダー", 4.0]]], ["汁なし　坦々麺", 1100, 1.1, [["ちぢれ麺", 1.0], ["豆乳チキンスープ", 50.0], ["FC粉サーモンカエシ", 25.0], ["キノコオイル", 50.0], ["ねりごま", 15.0], ["豚レアチャーシュー", 25.0], ["一味唐辛子", 3.0], ["既製品ラー油", 10.0], ["黒マー油", 10.0], ["ごぼう", 16.0], ["パプリカパウダー", 0.1], ["オイスミコ", 5.0], ["ギャバンランプフィッシュキャビア", 0.2], ["ミックスサラダ", 15.0], ["肉みそ", 20.0], ["三明　朝天ラージャオメン", 3.0], ["メイプルサーモン", 10.0], ["YOUKI四川山椒油", 5.0]]]];
-function buildSeed(){return {ingredients:SEED_ING.map(r=>({name:r[0],cat:r[1],price:r[2],amount:r[3],unit:r[4]})),preps:SEED_PREP.map(p=>({name:p[0],yield:p[1],yieldUnit:p[2],components:p[3].map(c=>({ingName:c[0],qty:c[1]}))})),menus:SEED_MENU.map(m=>({name:m[0],price:m[1],mult:m[2],components:m[3].map(c=>({ingName:c[0],qty:c[1]}))})),target:30};}
+function buildSeed(){return {ingredients:SEED_ING.map(r=>({name:r[0],cat:r[1],unit:r[2],yieldRate:r[3],note:r[4],active:0,suppliers:r[5].map(v=>({vendor:v[0],price:v[1],amount:v[2],pack:v[3]}))})),preps:SEED_PREP.map(p=>({name:p[0],yield:p[1],yieldUnit:p[2],components:p[3].map(c=>({ingName:c[0],qty:c[1]}))})),menus:SEED_MENU.map(m=>({name:m[0],price:m[1],mult:m[2],components:m[3].map(c=>({ingName:c[0],qty:c[1]}))})),target:30};}
 
 /* ---------- helpers ---------- */
 const yen=n=>"¥"+Math.round(n).toLocaleString('ja-JP');
@@ -301,7 +356,25 @@ function anyUnitLabel(name){
   return i?i.unit:(p?(p.yieldUnit||'g'):'');
 }
 function anyExists(name){ return !!(findPrep(name)||findIng(name)); }
-function unitCost(ing){const a=parseFloat(ing.amount),p=parseFloat(ing.price);if(!a||a<=0||isNaN(p))return 0;return p/a;}
+/* 旧データ（price/amount 形式）を新形式へ寄せる */
+function normIng(i){
+  if(!i) return i;
+  if(!Array.isArray(i.suppliers)){
+    i.suppliers=[{vendor:i.vendor||'',price:(i.price===undefined?'':i.price),amount:(i.amount===undefined?1:i.amount),pack:''}];
+  }
+  if(!i.suppliers.length) i.suppliers=[{vendor:'',price:'',amount:1,pack:''}];
+  if(typeof i.active!=='number'||i.active<0||i.active>=i.suppliers.length) i.active=0;
+  if(i.yieldRate===undefined||i.yieldRate===null||i.yieldRate==='') i.yieldRate=1;
+  if(i.note===undefined) i.note='';
+  return i;
+}
+function sup(i){ normIng(i); return i.suppliers[i.active]; }
+/* 単価 ＝ 仕入価格 ÷ 内容量 */
+function rawUnit(i){ const s=sup(i); const a=parseFloat(s.amount), p=parseFloat(s.price);
+  if(!a||a<=0||isNaN(p))return 0; return p/a; }
+/* 歩留り単価 ＝ 単価 ÷ 歩留り（原価計算はこちらを使う） */
+function unitCost(i){ const y=parseFloat(i&&i.yieldRate); const r=rawUnit(i);
+  return (!y||y<=0)?r:r/y; }
 function menuCost(m){let c=0;for(const comp of m.components){if(anyExists(comp.ingName))c+=anyUnitCost(comp.ingName)*(parseFloat(comp.qty)||0);}
   const mu=parseFloat(m.mult); return c*((isNaN(mu)||mu<=0)?1:mu);}
 
@@ -342,11 +415,15 @@ function buildLogs(beforeStr, afterStr){
   const mMap=o=>{const m={};(o.menus||[]).forEach(x=>{if(x.name)m[x.name]=x;});return m;};
   const a=iMap(A), b=iMap(B);
   Object.keys(b).forEach(function(k){
-    if(!a[k]){ out.push({kind:'材料追加',text:k+'（'+yenv(b[k].price)+' / '+(b[k].amount||'')+(b[k].unit||'')+'）'}); return; }
+    if(!a[k]){ {const sb=(b[k].suppliers&&b[k].suppliers[b[k].active||0])||{}; out.push({kind:'材料追加',text:k+'（'+yenv(sb.price)+' / '+(sb.amount||'')+(b[k].unit||'')+'）'});} return; }
     const x=a[k],y=b[k]; const ch=[];
-    if(String(x.price)!==String(y.price)) ch.push('仕入価格 '+yenv(x.price)+'→'+yenv(y.price));
-    if(String(x.amount)!==String(y.amount)) ch.push('仕入量 '+(x.amount||'')+'→'+(y.amount||''));
+    const sx=(x.suppliers&&x.suppliers[x.active||0])||{}, sy=(y.suppliers&&y.suppliers[y.active||0])||{};
+    if(String(sx.vendor||'')!==String(sy.vendor||'')) ch.push('仕入先 '+(sx.vendor||'(未設定)')+'→'+(sy.vendor||'(未設定)'));
+    if(String(sx.price)!==String(sy.price)) ch.push('仕入価格 '+yenv(sx.price)+'→'+yenv(sy.price));
+    if(String(sx.amount)!==String(sy.amount)) ch.push('内容量 '+(sx.amount||'')+'→'+(sy.amount||''));
     if(String(x.unit)!==String(y.unit)) ch.push('単位 '+(x.unit||'')+'→'+(y.unit||''));
+    if(String(x.yieldRate)!==String(y.yieldRate)) ch.push('歩留り '+((parseFloat(x.yieldRate)||1)*100).toFixed(0)+'%→'+((parseFloat(y.yieldRate)||1)*100).toFixed(0)+'%');
+    if((x.suppliers||[]).length!==(y.suppliers||[]).length) ch.push('仕入先の数 '+(x.suppliers||[]).length+'→'+(y.suppliers||[]).length);
     if(ch.length) out.push({kind:'材料変更',text:k+'：'+ch.join('、')});
   });
   Object.keys(a).forEach(function(k){ if(!b[k]) out.push({kind:'材料削除',text:k}); });
@@ -391,59 +468,130 @@ function ingRow(ing){
       <select class="catsel" onchange="upIng(${i},'cat',this.value)">${catOptions(ing.cat||'その他')}</select></div>
   </div>`;
 }
-let ingFilter='ALL';
+let ingFilter='ALL', ingQ='';
 function setIngFilter(c){ ingFilter=c; renderIng(); }
-/* 「調理済み」は仕込みタブで自動計算するため、材料タブには表示しません */
+function setIngQ(v){ ingQ=v; renderIng(); }
+function clearIngQ(){ ingQ=''; const e=document.getElementById('ingSearch'); if(e)e.value=''; renderIng(); }
 const PREP_CAT='調理済み';
 function isPrepCat(i){ return (i.cat||'その他')===PREP_CAT; }
+function ingHits(i){ if(!ingQ)return true; const q=norm(ingQ);
+  if(norm(i.name).includes(q))return true;
+  return (i.suppliers||[]).some(sp=>norm(sp.vendor).includes(q)); }
+
+function ingRowHTML(i,gi){
+  const sp=sup(i), ru=rawUnit(i), yu=unitCost(i);
+  const supOpts=(i.suppliers||[]).map((v,k)=>`<option value="${k}" ${k===i.active?'selected':''}>${esc(v.vendor||'(未設定)')}</option>`).join('')
+    +`<option value="__add">＋ 仕入先を追加…</option>`;
+  const multi=(i.suppliers||[]).length>1;
+  return `<tr>
+    <td class="w-cat"><select onchange="upIng(${gi},'cat',this.value)">${catOptions(i.cat||'その他')}</select></td>
+    <td class="w-name"><input value="${esc(i.name)}" placeholder="原料名" oninput="renameIng(${gi},this.value)">${multi?`<span class="supbadge">仕入先${i.suppliers.length}</span>`:''}</td>
+    <td class="w-price"><input class="num" value="${fmtNum(sp.price)}" inputmode="decimal" placeholder="0" onfocus="this.value=cleanNum(this.value)" onblur="this.value=fmtNum(this.value)" oninput="upSup(${gi},'price',cleanNum(this.value))"></td>
+    <td class="w-amt"><input class="num" value="${fmtNum(sp.amount)}" inputmode="decimal" placeholder="1" onfocus="this.value=cleanNum(this.value)" onblur="this.value=fmtNum(this.value)" oninput="upSup(${gi},'amount',cleanNum(this.value))"></td>
+    <td class="calc" data-c="up">${ru?yen2(ru):'—'}</td>
+    <td class="w-unit"><input value="${esc(i.unit||'')}" placeholder="g" oninput="upIng(${gi},'unit',this.value)"></td>
+    <td class="w-yield"><input class="num" value="${i.yieldRate==null?1:i.yieldRate}" inputmode="decimal" title="1＝100%、0.95＝95%" oninput="upIng(${gi},'yieldRate',cleanNum(this.value))"></td>
+    <td class="calc" data-c="yu">${yu?yen2(yu):'—'}</td>
+    <td class="w-vendor"><select onchange="pickSup(${gi},this.value)">${supOpts}</select></td>
+    <td class="w-note"><input value="${esc(i.note||'')}" placeholder="—" oninput="upIng(${gi},'note',this.value)"></td>
+    <td class="w-del"><button class="del" onclick="delIng(${gi})">×</button></td>
+  </tr>`;
+}
+
 function renderIng(){
-  const el=document.getElementById('ingList');
+  (state.ingredients||[]).forEach(normIng);
   const bn=document.getElementById('ingBanner');
-  bn.innerHTML = HAS_API ? '' : '<div class="banner">接続先URLが未設定のプレビュー表示です（この端末に一時保存）。</div>';
+  if(bn) bn.innerHTML = HAS_API ? '' : '<div class="banner">接続先URLが未設定のプレビュー表示です。</div>';
 
-  const buyable=state.ingredients.filter(i=>!isPrepCat(i));   // 仕入れるもの
-  const hidden =state.ingredients.filter(isPrepCat);          // 仕込み品（材料タブでは非表示）
+  const idxAll=state.ingredients.map((x,k)=>k);
+  const buyIdx=idxAll.filter(k=>!isPrepCat(state.ingredients[k]));
+  const prepIdx=idxAll.filter(k=>isPrepCat(state.ingredients[k]));
 
-  // サブタブ
   const sub=document.getElementById('ingSub');
   if(sub){
-    const cats=CATS.filter(c=>c!==PREP_CAT&&buyable.some(i=>(i.cat||'その他')===c));
-    let h=`<button class="${ingFilter==='ALL'?'on':''}" onclick="setIngFilter('ALL')">すべて<span class="n">${buyable.length}</span></button>`;
+    const cats=CATS.filter(c=>c!==PREP_CAT&&buyIdx.some(k=>(state.ingredients[k].cat||'その他')===c));
+    let h=`<button class="${ingFilter==='ALL'?'on':''}" onclick="setIngFilter('ALL')">すべて<span class="n">${buyIdx.length}</span></button>`;
     cats.forEach(function(c){
-      const n=buyable.filter(i=>(i.cat||'その他')===c).length;
+      const n=buyIdx.filter(k=>(state.ingredients[k].cat||'その他')===c).length;
       h+=`<button class="${ingFilter===c?'on':''}" onclick="setIngFilter('${esc(c)}')">${esc(c)}<span class="n">${n}</span></button>`;
     });
     sub.innerHTML=h;
   }
 
-  const show=(ingFilter==='ALL')?buyable:buyable.filter(i=>(i.cat||'その他')===ingFilter);
+  let show=buyIdx.filter(k=>ingHits(state.ingredients[k]));
+  if(ingFilter!=='ALL') show=show.filter(k=>(state.ingredients[k].cat||'その他')===ingFilter);
+
+  const head=`<thead><tr>
+    <th class="w-cat">区分</th><th class="w-name">原料名</th><th class="w-price">仕入価格</th><th class="w-amt">内容量</th>
+    <th style="text-align:right">単価</th><th class="w-unit">単位</th><th class="w-yield">歩留り</th>
+    <th style="text-align:right">歩留り単価</th><th class="w-vendor">仕入先</th><th class="w-note">備考</th><th class="w-del"></th>
+  </tr></thead>`;
+  let body='';
   if(!state.ingredients.length){
-    el.innerHTML=`<div class="empty"><div class="big">まだ材料がありません</div><button class="btn btn-ghost btn-sm" onclick="seed()">原価表を読み込む</button></div>`;
+    body=`<tr><td colspan="11"><div class="empty"><div class="big">まだ材料がありません</div><button class="btn btn-ghost btn-sm" onclick="seed()">原価表を読み込む</button></div></td></tr>`;
   }else if(!show.length){
-    el.innerHTML='<div class="empty">この区分の材料はありません。</div>';
+    body=`<tr><td colspan="11"><div class="empty">該当する材料がありません。</div></td></tr>`;
   }else{
-    let h='';
     const cats=(ingFilter==='ALL')?CATS.filter(c=>c!==PREP_CAT):[ingFilter];
     cats.forEach(function(cat){
-      const items=show.filter(i=>(i.cat||'その他')===cat);
+      const items=show.filter(k=>(state.ingredients[k].cat||'その他')===cat);
       if(!items.length)return;
-      h+=`<div class="cat-head">${esc(cat)}<span>${items.length}</span></div>`+items.map(ingRow).join('');
+      body+=`<tr class="catrow"><td colspan="11">${esc(cat)}　<span style="font-weight:400">${items.length}件</span></td></tr>`;
+      body+=items.map(k=>ingRowHTML(state.ingredients[k],k)).join('');
     });
-    el.innerHTML=h;
   }
-  if(hidden.length){
-    el.innerHTML += `<div class="cat-head" style="background:#eef6f1;color:#2c6a4d">仕込み品（このタブでは編集しません）<span>${hidden.length}</span></div>`
-      + `<div style="padding:12px 14px;font-size:12.5px;color:var(--muted);line-height:1.7">`
-      + hidden.map(i=>esc(i.name)).join('、')
-      + `<br><b style="color:var(--good)">これらは「仕込み」タブで材料から自動計算されます。</b>単価を直したいときは仕込みタブで編集してください。</div>`;
+  if(prepIdx.length){
+    body+=`<tr class="catrow" style="background:#eef6f1;color:#2c6a4d"><td colspan="11">仕込み品（「仕込み」タブで自動計算）　<span style="font-weight:400">${prepIdx.length}件</span></td></tr>`;
+    body+=`<tr><td colspan="11" style="font-size:12px;color:var(--muted);line-height:1.7;padding:10px 8px">`
+        + prepIdx.map(k=>esc(state.ingredients[k].name)).join('、')
+        + `</td></tr>`;
   }
-  document.getElementById('cntIng').textContent=buyable.length?`(${buyable.length})`:'';
+  const t=document.getElementById('ingTable');
+  if(t) t.innerHTML=head+'<tbody>'+body+'</tbody>';
+  const hit=document.getElementById('ingHit');
+  if(hit)hit.textContent=ingQ?`${show.length} / ${buyIdx.length}件`:`${buyIdx.length}件`;
+  document.getElementById('cntIng').textContent=buyIdx.length?`(${buyIdx.length})`:'';
 }
-function addIng(){const c=(ingFilter!=='ALL'&&ingFilter!==PREP_CAT)?ingFilter:'一般食材';state.ingredients.push({name:"",cat:c,amount:1,unit:"g",price:""});renderIng();scheduleSave();}
+
+/* 仕入先の切り替え・追加 */
+function pickSup(gi,v){
+  const i=state.ingredients[gi]; if(!i)return; normIng(i);
+  if(v==='__add'){
+    const nm=prompt('追加する仕入先の名前'); 
+    if(!nm){ renderIng(); return; }
+    const cur=sup(i);
+    i.suppliers.push({vendor:nm,price:cur.price,amount:cur.amount,pack:''});
+    i.active=i.suppliers.length-1;
+    renderIng(); renderPreps(); renderMenusLive(); scheduleSave();
+    toast('仕入先「'+nm+'」を追加しました。仕入価格を入れてください'); return;
+  }
+  i.active=parseInt(v,10)||0;
+  renderIng(); renderPreps(); renderMenusLive(); scheduleSave();
+}
+function upSup(gi,f,v){
+  const i=state.ingredients[gi]; if(!i)return; const sp=sup(i); sp[f]=v;
+  refreshIngRow(gi); renderPreps(); renderMenusLive(); scheduleSave();
+}
+function refreshIngRow(gi){
+  const i=state.ingredients[gi]; if(!i)return;
+  const rows=document.querySelectorAll('#ingTable tbody tr');
+  rows.forEach(function(tr){
+    const del=tr.querySelector('.del');
+    if(del && del.getAttribute('onclick')==='delIng('+gi+')'){
+      const up=tr.querySelector('[data-c="up"]'), yu=tr.querySelector('[data-c="yu"]');
+      const r=rawUnit(i), y=unitCost(i);
+      if(up)up.textContent=r?yen2(r):'—';
+      if(yu)yu.textContent=y?yen2(y):'—';
+    }
+  });
+}
+function addIng(){const c=(ingFilter!=='ALL'&&ingFilter!==PREP_CAT)?ingFilter:'一般食材';
+  ingQ='';const e=document.getElementById('ingSearch');if(e)e.value='';
+  state.ingredients.unshift(normIng({name:"",cat:c,unit:"g",yieldRate:1,note:"",active:0,suppliers:[{vendor:"",price:"",amount:1,pack:""}]}));
+  renderIng();scheduleSave();window.scrollTo(0,0);toast('新しい行を一番上に追加しました');}
 function upIng(i,f,v){const ing=state.ingredients[i];if(!ing)return;ing[f]=v;
   if(f==='cat'){const y=window.scrollY;renderIng();window.scrollTo(0,y);scheduleSave();return;}
-  const uc=unitCost(ing),el=document.getElementById('uc-'+i);if(el)el.textContent=uc?`単価 ${yen2(uc)} / ${ing.unit}`:'量と価格で単価が出ます';
-  renderMenusLive();scheduleSave();}
+  refreshIngRow(i); renderPreps(); renderMenusLive(); scheduleSave();}
 function renameIng(i,v){const ing=state.ingredients[i];if(!ing)return;const old=ing.name;ing.name=v;
   state.menus.forEach(m=>m.components.forEach(c=>{if(c.ingName===old)c.ingName=v;}));scheduleSave();}
 function delIng(i){const ing=state.ingredients[i];const used=state.menus.some(m=>m.components.some(c=>c.ingName===ing.name));
@@ -451,6 +599,30 @@ function delIng(i){const ing=state.ingredients[i];const used=state.menus.some(m=
   state.ingredients.splice(i,1);renderIng();renderMenus();scheduleSave();}
 
 
+
+
+/* ---------- 検索と折りたたみ ---------- */
+let prepQ='', menuQ='';
+const foldPrep={}, foldMenu={};      // true = 閉じている
+let prepAllFold=false, menuAllFold=false;
+function norm(v){ return String(v==null?'':v).toLowerCase().replace(/\s+/g,''); }
+function setPrepQ(v){ prepQ=v; renderPreps(); }
+function clearPrepQ(){ prepQ=''; const e=document.getElementById('prepSearch'); if(e)e.value=''; renderPreps(); }
+function setMenuQ(v){ menuQ=v; renderMenus(); }
+function clearMenuQ(){ menuQ=''; const e=document.getElementById('menuSearch'); if(e)e.value=''; renderMenus(); }
+function togglePrep(j){ foldPrep[j]=!foldPrep[j]; const c=document.querySelector(`[data-p="${j}"]`); if(c)c.classList.toggle('fold'); }
+function toggleMenu(j){ foldMenu[j]=!foldMenu[j]; const c=document.querySelector(`[data-j="${j}"]`); if(c)c.classList.toggle('fold'); }
+function toggleAllPreps(){ prepAllFold=!prepAllFold; (state.preps||[]).forEach((_,j)=>foldPrep[j]=prepAllFold);
+  const b=document.getElementById('prepFoldBtn'); if(b)b.textContent=prepAllFold?'すべて開く':'すべて閉じる'; renderPreps(); }
+function toggleAllMenus(){ menuAllFold=!menuAllFold; state.menus.forEach((_,j)=>foldMenu[j]=menuAllFold);
+  const b=document.getElementById('menuFoldBtn'); if(b)b.textContent=menuAllFold?'すべて開く':'すべて閉じる'; renderMenus(); }
+/* 名前＋中の材料名でヒット判定 */
+function prepHits(p){ if(!prepQ)return true; const q=norm(prepQ);
+  if(norm(p.name).includes(q))return true;
+  return (p.components||[]).some(c=>norm(c.ingName).includes(q)); }
+function menuHits(m){ if(!menuQ)return true; const q=norm(menuQ);
+  if(norm(m.name).includes(q))return true;
+  return (m.components||[]).some(c=>norm(c.ingName).includes(q)); }
 
 /* 行ごとのプルダウン（今の選択を保持。仕込みを上に、次に材料をカテゴリ別） */
 function pickerOptions(current, excludeName){
@@ -499,7 +671,13 @@ function prepCardHTML(p,j){
     if(!ok)return `<div class="comp missing"><span class="cname">(見つからない材料) ${esc(nm)}</span><span></span><span></span><span class="ccost">—</span><button class="del" onclick="delPComp(${j},${k})">×</button></div>`;
     return `<div class="comp"><select class="csel${findPrep(nm)?' isprep':''}" onchange="changePComp(${j},${k},this.value)">${pickerOptions(nm,p.name)}</select><input class="fld num" value="${fmtNum(c.qty)}" inputmode="decimal" placeholder="量" onfocus="this.value=cleanNum(this.value)" onblur="this.value=fmtNum(this.value)" oninput="upPComp(${j},${k},cleanNum(this.value))"><span class="cunit">${esc(anyUnitLabel(nm))}</span><span class="ccost">${yen(uc*q)}</span><button class="del" onclick="delPComp(${j},${k})">×</button></div>`;
   }).join(''):'<div style="padding:12px 14px;color:var(--muted);font-size:13px">下の欄から材料を追加してください。</div>';
-  return `<div class="card" data-p="${j}">
+  return `<div class="card${foldPrep[j]?' fold':''}" data-p="${j}">
+    <div class="card-head-row" onclick="togglePrep(${j})">
+      <span class="cx">▼</span>
+      <span class="nm">${esc(p.name||'(無名)')}</span>
+      <span class="mini">${fmtNum(p.yield)}${esc(p.yieldUnit||'g')}　<b>${yen(total)}</b>　1${esc(p.yieldUnit||'g')} ${yen2(per)}</span>
+    </div>
+    <div class="foldable">
     <div class="menu-top"><div style="flex:1"><input class="menu-name" value="${esc(p.name)}" placeholder="仕込み名" oninput="upPrep(${j},'name',this.value)"></div>
       <div class="price-wrap"><span class="yen">完成量</span><input class="fld num" style="width:78px" value="${fmtNum(p.yield)}" inputmode="decimal" placeholder="0" onfocus="this.value=cleanNum(this.value)" onblur="this.value=fmtNum(this.value)" oninput="upPrep(${j},'yield',cleanNum(this.value))"><input class="fld" style="width:56px" value="${esc(p.yieldUnit||'g')}" oninput="upPrep(${j},'yieldUnit',this.value)"></div>
       <button class="del" onclick="delPrep(${j})">×</button></div>
@@ -509,16 +687,21 @@ function prepCardHTML(p,j){
     </div>
     <div data-pcomps>${comps}</div>
     <div class="comp-add"><select class="fld" onchange="addPComp(${j},this.value);this.value='';">${prepOptsHTML()}</select></div>
+    </div>
   </div>`;
 }
 function renderPreps(){
   const el=document.getElementById('prepList'); if(!el)return;
   state.preps=state.preps||[];
+  const idx=state.preps.map((p,j)=>j).filter(j=>prepHits(state.preps[j]));
   if(!state.preps.length){ el.innerHTML='<div class="card"><div class="empty"><div class="big">まだ仕込みがありません</div>「仕込みを追加」で作成できます。</div></div>'; }
-  else el.innerHTML=state.preps.map((p,j)=>prepCardHTML(p,j)).join('');
+  else if(!idx.length){ el.innerHTML=`<div class="card"><div class="empty"><div class="big">「${esc(prepQ)}」に一致する仕込みはありません</div>別の言葉でお試しください。</div></div>`; }
+  else el.innerHTML=idx.map(j=>prepCardHTML(state.preps[j],j)).join('');
+  const hit=document.getElementById('prepHit');
+  if(hit)hit.textContent=prepQ?`${idx.length} / ${state.preps.length}件`:`${state.preps.length}件`;
   const cn=document.getElementById('cntPrep'); if(cn)cn.textContent=state.preps.length?`(${state.preps.length})`:'';
 }
-function addPrep(){ state.preps=state.preps||[]; state.preps.push({name:"",yield:"",yieldUnit:"g",components:[]}); renderPreps(); scheduleSave(); }
+function addPrep(){ state.preps=state.preps||[]; prepQ=''; const e=document.getElementById('prepSearch'); if(e)e.value=''; state.preps.push({name:"",yield:"",yieldUnit:"g",components:[]}); renderPreps(); scheduleSave(); }
 function upPrep(j,f,v){ const p=state.preps[j]; if(!p)return; const old=p.name; p[f]=v;
   if(f==='name'){ state.menus.forEach(m=>m.components.forEach(c=>{if(c.ingName===old)c.ingName=v;}));
                   state.preps.forEach(q=>q.components.forEach(c=>{if(c.ingName===old)c.ingName=v;})); }
@@ -534,6 +717,8 @@ function refreshPrep(j){ const p=state.preps[j],card=document.querySelector(`[da
   const total=prepCost(p),y=parseFloat(p.yield)||0;
   card.querySelector('[data-pm="total"]').textContent=yen(total);
   card.querySelector('[data-pm="per"]').textContent=yen2(y?total/y:0);
+  const ph=card.querySelector('.card-head-row .mini');
+  if(ph)ph.innerHTML=`${fmtNum(p.yield)}${esc(p.yieldUnit||'g')}　<b>${yen(total)}</b>　1${esc(p.yieldUnit||'g')} ${yen2(y?total/y:0)}`;
   card.querySelectorAll('[data-pcomps] .comp').forEach(function(row,k){ const c=p.components[k]; if(!c||!anyExists(c.ingName))return;
     const ce=row.querySelector('.ccost'); if(ce)ce.textContent=yen(anyUnitCost(c.ingName)*(parseFloat(c.qty)||0)); }); }
 
@@ -545,7 +730,13 @@ function menuCardHTML(m,j){
   const comps=m.components.length?m.components.map((c,k)=>{const nm=c.ingName,ok=anyExists(nm),uc=ok?anyUnitCost(nm):0,cc=uc*(parseFloat(c.qty)||0);
     if(!ok)return `<div class="comp missing"><span class="cname">(見つからない材料) ${esc(nm)}</span><span></span><span></span><span class="ccost">—</span><button class="del" onclick="delComp(${j},${k})">×</button></div>`;
     return `<div class="comp"><select class="csel${findPrep(nm)?' isprep':''}" onchange="changeComp(${j},${k},this.value)">${pickerOptions(nm)}</select><input class="fld num" value="${fmtNum(c.qty)}" inputmode="decimal" placeholder="量" onfocus="this.value=cleanNum(this.value)" onblur="this.value=fmtNum(this.value)" oninput="upComp(${j},${k},cleanNum(this.value))"><span class="cunit">${esc(anyUnitLabel(nm))}</span><span class="ccost">${yen(cc)}</span><button class="del" onclick="delComp(${j},${k})">×</button></div>`;}).join(''):`<div style="padding:12px 14px;color:var(--muted);font-size:13px">下の欄から材料を追加してください。</div>`;
-  return `<div class="card" data-j="${j}">
+  return `<div class="card${foldMenu[j]?' fold':''}" data-j="${j}">
+    <div class="card-head-row" onclick="toggleMenu(${j})">
+      <span class="cx">▼</span>
+      <span class="nm">${esc(m.name||'(無名)')}</span>
+      <span class="mini">売価 ${price>0?yen(price):'—'}　原価 <b>${yen(cost)}</b>　<span class="${rateCls}"><b>${price>0?rate.toFixed(1)+'%':'—'}</b></span></span>
+    </div>
+    <div class="foldable">
     <div class="menu-top"><div style="flex:1"><input class="menu-name" value="${esc(m.name)}" placeholder="メニュー名" oninput="upMenu(${j},'name',this.value)"></div>
       <div class="price-wrap"><span class="yen">売価 ¥</span><input class="fld num" style="width:82px" value="${fmtNum(m.price)}" inputmode="decimal" placeholder="0" onfocus="this.value=cleanNum(this.value)" onblur="this.value=fmtNum(this.value)" oninput="upMenu(${j},'price',cleanNum(this.value))"></div>
       <div class="price-wrap"><span class="yen">係数 ×</span><input class="fld num" style="width:56px" value="${m.mult==null?1:m.mult}" inputmode="decimal" placeholder="1" title="ロス・税などの掛け率（1でなし）" oninput="upMenu(${j},'mult',cleanNum(this.value))"></div>
@@ -556,13 +747,18 @@ function menuCardHTML(m,j){
       <div class="metric"><div class="k">粗利</div><div class="v" data-m="profit">${price>0?yen(profit):'—'}</div></div></div>
     <div data-comps>${comps}</div>
     <div class="comp-add"><select class="fld" onchange="addComp(${j},this.value);this.value='';">${ingOptsHTML()}</select></div>
+    </div>
   </div>`;
 }
 function renderMenus(){const el=document.getElementById('menuList');
+  const idx=state.menus.map((m,j)=>j).filter(j=>menuHits(state.menus[j]));
   if(!state.menus.length){el.innerHTML=`<div class="card"><div class="empty"><div class="big">まだメニューがありません</div>「メニューを追加」で作成できます。</div></div>`;}
-  else el.innerHTML=state.menus.map((m,j)=>menuCardHTML(m,j)).join('');
+  else if(!idx.length){el.innerHTML=`<div class="card"><div class="empty"><div class="big">「${esc(menuQ)}」に一致するメニューはありません</div>メニュー名でも材料名でも探せます。</div></div>`;}
+  else el.innerHTML=idx.map(j=>menuCardHTML(state.menus[j],j)).join('');
+  const hit=document.getElementById('menuHit');
+  if(hit)hit.textContent=menuQ?`${idx.length} / ${state.menus.length}件`:`${state.menus.length}件`;
   document.getElementById('cntMenu').textContent=state.menus.length?`(${state.menus.length})`:'';}
-function addMenu(){if(!state.ingredients.length){toast("先に材料を登録してください");switchTab('ing');return;}state.menus.push({name:"",price:"",components:[]});renderMenus();scheduleSave();}
+function addMenu(){if(!state.ingredients.length){toast("先に材料を登録してください");switchTab('ing');return;}menuQ='';const e=document.getElementById('menuSearch');if(e)e.value='';state.menus.push({name:"",price:"",components:[]});renderMenus();scheduleSave();}
 function upMenu(j,f,v){const m=state.menus[j];if(!m)return;m[f]=v;refreshCard(j);scheduleSave();}
 function delMenu(j){const m=state.menus[j];if(!confirm(`「${m.name||'このメニュー'}」を削除しますか？`))return;state.menus.splice(j,1);renderMenus();scheduleSave();}
 function addComp(j,ingName){if(!ingName)return;state.menus[j].components.push({ingName,qty:""});renderMenus();scheduleSave();}
@@ -573,6 +769,8 @@ function refreshCard(j){const m=state.menus[j];const card=document.querySelector
   card.querySelector('[data-m="cost"]').textContent=yen(cost);
   const r=card.querySelector('[data-m="rate"]');r.innerHTML=price>0?rate.toFixed(1)+'<small>%</small>':'—';r.className='v '+(price<=0?'':(over?'rate-over':'rate-good'));
   card.querySelector('[data-m="profit"]').textContent=price>0?yen(profit):'—';
+  const hd=card.querySelector('.card-head-row .mini');
+  if(hd)hd.innerHTML=`売価 ${price>0?yen(price):'—'}　原価 <b>${yen(cost)}</b>　<span class="${price<=0?'':(over?'rate-over':'rate-good')}"><b>${price>0?rate.toFixed(1)+'%':'—'}</b></span>`;
   card.querySelectorAll('[data-comps] .comp').forEach((row,k)=>{const c=m.components[k];if(!c||!anyExists(c.ingName))return;const ce=row.querySelector('.ccost');if(ce)ce.textContent=yen(anyUnitCost(c.ingName)*(parseFloat(c.qty)||0));});}
 function renderMenusLive(){state.menus.forEach((m,j)=>refreshCard(j));}
 
@@ -600,8 +798,8 @@ function renderSum(){
 }
 
 /* ---------- misc ---------- */
-function seed(){if((state.ingredients.length||state.menus.length)&&!confirm("原価表を読み込みます。現在の内容は置き換わります。よろしいですか？"))return;state=buildSeed();renderAll();scheduleSave();toast("原価表を読み込みました");}
-function renderAll(){renderIng();renderPreps();renderMenus();renderSum();document.getElementById('targetInput').value=state.target;}
+function seed(){if((state.ingredients.length||state.menus.length)&&!confirm("原価表を読み込みます。現在の内容は置き換わります。よろしいですか？"))return;state=buildSeed();renderAll();scheduleSave();if(HAS_API){saveNow();}else{toast("原価表を読み込みました");}}
+function renderAll(){(state.ingredients||[]).forEach(normIng);renderIng();renderPreps();renderMenus();renderSum();document.getElementById('targetInput').value=state.target;}
 let toastT;function toast(m){const t=document.getElementById('toast');t.textContent=m;t.classList.add('show');clearTimeout(toastT);toastT=setTimeout(()=>t.classList.remove('show'),1900);}
 function switchTab(name){document.querySelectorAll('nav.tabs button').forEach(b=>b.classList.toggle('active',b.dataset.tab===name));document.querySelectorAll('.panel').forEach(p=>p.classList.toggle('active',p.id==='panel-'+name));if(name==='sum')renderSum();if(name==='hist')renderHist();if(name==='prep')renderPreps();}
 document.querySelectorAll('nav.tabs button').forEach(b=>b.addEventListener('click',()=>switchTab(b.dataset.tab)));
@@ -685,12 +883,16 @@ function doPrint(){
 
   // ⑤ 材料の仕入表
   h+='<div class="p-sec"><h3>⑤ 材料の仕入表</h3><table class="p"><thead><tr>'
-   +'<th class="l">材料名</th><th class="l">カテゴリ</th><th>仕入量</th><th class="l">単位</th><th>仕入価格</th><th>単価</th></tr></thead><tbody>';
-  CATS.forEach(function(cat){
+   +'<th class="l">区分</th><th class="l">原料名</th><th>仕入価格</th><th>内容量</th><th>単価</th>'
+   +'<th class="l">単位</th><th>歩留り</th><th>歩留り単価</th><th class="l">仕入先</th><th class="l">備考</th></tr></thead><tbody>';
+  CATS.filter(function(c){return c!=='調理済み';}).forEach(function(cat){
     const items=state.ingredients.filter(i=>(i.cat||'その他')===cat);
     items.forEach(function(i){
-      h+='<tr><td class="l">'+esc(i.name)+'</td><td class="l">'+esc(cat)+'</td><td>'+fmtNum(i.amount)+'</td>'
-       +'<td class="l">'+esc(i.unit)+'</td><td>'+yen(i.price||0)+'</td><td>'+yen2(unitCost(i))+'</td></tr>';
+      normIng(i); const sp=sup(i);
+      h+='<tr><td class="l">'+esc(cat)+'</td><td class="l">'+esc(i.name)+'</td>'
+       +'<td>'+yen(parseFloat(sp.price)||0)+'</td><td>'+fmtNum(sp.amount)+'</td><td>'+yen2(rawUnit(i))+'</td>'
+       +'<td class="l">'+esc(i.unit||'')+'</td><td>'+((parseFloat(i.yieldRate)||1)*100).toFixed(0)+'%</td>'
+       +'<td>'+yen2(unitCost(i))+'</td><td class="l">'+esc(sp.vendor||'')+'</td><td class="l">'+esc(i.note||'')+'</td></tr>';
     });
   });
   h+='</tbody></table></div>';
@@ -704,16 +906,39 @@ function applyData(d){
   if(d && d.ingredients && (d.ingredients.length || d.menus.length)){
     state = { ingredients:d.ingredients||[], menus:(d.menus||[]).map(function(m){return {name:m.name,price:m.price,components:m.components||[]};}), target:d.target||30 };
   }
+  (state.ingredients||[]).forEach(normIng);
   logsCache = (d && d.logs) ? d.logs : [];
+  bootHide();
   setSave('saved','保存済み'); renderAll(); renderHist(); setBaseline();
 }
+function bootShow(msg,sub){ const b=document.getElementById('bootScreen'); if(!b)return;
+  b.style.display='flex';
+  if(msg)document.getElementById('bootMsg').textContent=msg;
+  if(sub!==undefined)document.getElementById('bootSub').textContent=sub; }
+function bootHide(){ const b=document.getElementById('bootScreen'); if(b)b.style.display='none'; }
+
+function isEmptyData(d){ return !d || ((!d.ingredients||!d.ingredients.length) && (!d.menus||!d.menus.length)); }
+
 function boot(){
+  bootShow('読み込み中…','スプレッドシートからデータを取得しています');
   apiGet().then(function(d){
-    if(d && d.error){ showGate(); return; }
-    applyData(d);
-  }).catch(function(){ setSave('err','読み込み失敗'); renderAll(); });
+    if(d && d.error){ bootHide(); showGate(); return; }
+    if(isEmptyData(d) && HAS_API){
+      // 初回のみ：原価表を自動で読み込んで保存する
+      bootShow('初期データを準備中…','材料・仕込み・メニューを登録しています');
+      state=buildSeed(); renderAll();
+      const logs=[{kind:'初期設定',text:'原価表を読み込みました（材料'+state.ingredients.length+'・仕込み'+(state.preps||[]).length+'・メニュー'+state.menus.length+'）'}];
+      apiSave(state,logs).then(function(){
+        logsCache.unshift({time:nowStr(),kind:logs[0].kind,text:logs[0].text});
+        setSave('saved','保存済み'); renderHist(); setBaseline(); bootHide(); toast('原価表を読み込みました');
+      }).catch(function(){ setSave('err','保存できません'); bootHide(); toast('保存できませんでした'); });
+      return;
+    }
+    applyData(d); bootHide();
+  }).catch(function(){ setSave('err','読み込み失敗'); renderAll(); bootHide();
+    toast('読み込めませんでした。通信を確認してください'); });
 }
-function showGate(){ document.getElementById('gate').style.display='flex'; setTimeout(function(){ document.getElementById('gateIn').focus(); },60); }
+function showGate(){ bootHide(); document.getElementById('gate').style.display='flex'; setTimeout(function(){ document.getElementById('gateIn').focus(); },60); }
 function hideGate(){ document.getElementById('gate').style.display='none'; }
 function lockNow(){ try{ localStorage.removeItem('salmon-gate'); }catch(e){} location.reload(); }
 function tryPass(){
@@ -723,17 +948,20 @@ function tryPass(){
   apiGet().then(function(d){
     if(d && d.error){ err.textContent='合言葉が違います'; document.getElementById('gateIn').value=''; __PASS=null; return; }
     try{ localStorage.setItem('salmon-gate', code); }catch(e){}
-    hideGate(); applyData(d);
+    hideGate();
+    if(isEmptyData(d) && HAS_API){ boot(); return; }
+    applyData(d);
   }).catch(function(e){ err.textContent='接続できませんでした（'+((e&&e.message)||'通信')+'）'; __PASS=null; });
 }
 document.getElementById('gateBtn').addEventListener('click', tryPass);
 document.getElementById('gateIn').addEventListener('keydown', function(e){ if(e.key==='Enter') tryPass(); });
 
 if(!HAS_API){
-  boot(); // URL未設定（プレビュー）は合言葉なしで表示
+  bootHide(); boot(); // URL未設定（プレビュー）は合言葉なしで表示
 }else{
+  bootShow('読み込み中…','スプレッドシートに接続しています');
   var saved=null; try{ saved=localStorage.getItem('salmon-gate'); }catch(e){}
-  if(saved){ __PASS=saved; apiGet().then(function(d){ if(d&&d.error){ __PASS=null; showGate(); } else { applyData(d); } }).catch(function(){ showGate(); }); }
+  if(saved){ __PASS=saved; boot(); }   // boot() が読み込み・初回自動登録・合言葉確認をすべて処理
   else { showGate(); }
 }
 </script>
